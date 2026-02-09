@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>No Show No Call</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="api-config.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col fixed left-0 top-0 h-screen z-40">
+
+    <!-- BRAND -->
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Admin Portal</p>
+    </div>
+
+    <!-- NAVIGATION -->
+    <nav class="flex-1 px-4 mt-4 space-y-1">
+
+      <!-- DASHBOARD -->
+      <a href="dashboard.html"
+         class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Dashboard
+      </a>
+
+      <!-- EMPLOYEE DROPDOWN (OPEN) -->
+      <div>
+        <button
+          onclick="toggleEmployeeMenu()"
+          class="w-full flex justify-between items-center px-4 py-2 rounded-lg bg-slate-700 focus:outline-none">
+          <span>Employee</span>
+          <svg id="employeeArrow"
+               class="w-4 h-4 rotate-180 transition-transform"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <!-- SUB MENU -->
+        <div id="employeeMenu" class="ml-4 mt-1 space-y-1">
+
+          <a href="employee.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Employee List
+          </a>
+
+          <a href="add-employee.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Add Employee
+          </a>
+
+          <a href="manage-employee.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Manage Employee
+          </a>
+
+          <a href="no-show.html"
+             class="block px-4 py-2 rounded-lg text-sm bg-red-600 font-semibold">
+            No Show No Call
+          </a>
+
+        </div>
+      </div>
+
+      <!-- OTHER LINKS -->
+      <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Leave Request
+      </a>
+
+     
+
+      <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Attendance
+      </a>
+
+      <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Tap Login
+      </a>
+
+    </nav>
+
+    <!-- FOOTER -->
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p class="font-semibold">Admin</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="ml-64 p-8 w-full">
+
+    <!-- PAGE HEADER -->
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Employees Who Haven't Logged In for 5 Days</h1>
+
+    <!-- TABLE CARD -->
+    <section class="bg-white rounded-xl shadow p-6">
+
+      <!-- CONTROLS -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium">Filter by Status</label>
+          <select id="departmentFilter" class="border rounded px-3 py-2 text-sm bg-white">
+            <option value="">All</option>
+            <option>Admin</option>
+            <option>Engineering</option>
+            <option>Installer</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input id="searchInput" type="text" placeholder="Search..."
+            class="border rounded px-3 py-2 text-sm w-full md:w-64" />
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-100 border-b">
+              <th class="px-4 py-3 text-left font-medium">Barcode ID</th>
+              <th class="px-4 py-3 text-left font-medium">Name</th>
+              <th class="px-4 py-3 text-left font-medium">Employed Date</th>
+              <th class="px-4 py-3 text-left font-medium">Department</th>
+              <th class="px-4 py-3 text-left font-medium">Position</th>
+              <th class="px-4 py-3 text-left font-medium">Status</th>
+              <th class="px-4 py-3 text-left font-medium">Last Login Date</th>
+            </tr>
+          </thead>
+
+          <tbody id="employeeTable">
+            <!-- ROWS HERE -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="mt-4 flex justify-between items-center">
+        <div class="text-sm text-gray-600" id="paginationInfo">Showing 1 to 10 of 153 entries</div>
+        <div class="flex gap-1" id="paginationButtons"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+<script>
+  function toggleEmployeeMenu() {
+    document.getElementById("employeeMenu").classList.toggle("hidden");
+    document.getElementById("employeeArrow").classList.toggle("rotate-180");
+  }
+
+  // Logout functionality
+  document.querySelector('.text-red-400').addEventListener('click', () => {
+    window.location.href = 'auth-login.html';
+  });
+
+  const data = [
+    { barcode: "SCPH002406035J", name: "JANREY PELAYO", date: "2024-06-03", dept: "Installer", position: "Installer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20170717ZL", name: "ARNOLD GABRIEL S. CRUZ", date: "2017-07-17", dept: "Admin", position: "President", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20201001ZP", name: "ALEJO, ED ANTHONY", date: "2020-10-01", dept: "Engineering", position: "Sub Engineer | Technical Aftersales", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20210101UJ", name: "JEFFREY ZULUETA", date: "2021-01-01", dept: "Installer", position: "Team Leader Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20210327OZ", name: "RALPH LAURENCE S.J. DE JESUS", date: "2021-03-27", dept: "Installer", position: "Installer Sub Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20210505KZ", name: "JOMAR NITUYA", date: "2021-05-05", dept: "Installer", position: "Installer Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20220101H6", name: "JERIC TORRES ZULUETA", date: "2022-01-01", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH202202077L", name: "ERICKSON ALBES", date: "2022-02-07", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20220301YZ", name: "PATRICK EVANGELISTA", date: "2022-03-01", dept: "Admin", position: "Driver", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH202203125C", name: "EDWARD DE CASTRO", date: "2022-03-12", dept: "Installer", position: "Installer Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20220401AB", name: "MARIA SANTOS", date: "2022-04-01", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20220501CD", name: "JUAN DELA CRUZ", date: "2022-05-01", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20220601EF", name: "ROSARIO GARCIA", date: "2022-06-01", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20220701GH", name: "CARLOS REYES", date: "2022-07-01", dept: "Engineering", position: "Project Engineer", status: "Inactive", lastLogin: "Never" },
+    { barcode: "SCPH20220801IJ", name: "ANGELES FLORES", date: "2022-08-01", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20220901KL", name: "BENJAMIN TORRES", date: "2022-09-01", dept: "Installer", position: "Team Leader Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20221001MN", name: "CAROLINA LOPEZ", date: "2022-10-01", dept: "Engineering", position: "Electrical Engineer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20221101OP", name: "DANIEL VILLANUEVA", date: "2022-11-01", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20221201QR", name: "ELIZABETH MENDOZA", date: "2022-12-01", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20230101ST", name: "FRANCISCO NAVARRO", date: "2023-01-01", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20230201UV", name: "GRACE SANTOS", date: "2023-02-01", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20230301WX", name: "HENRY TORRES", date: "2023-03-01", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20230401YZ", name: "IRENE GARCIA", date: "2023-04-01", dept: "Engineering", position: "Project Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20230501AA", name: "JACK REYES", date: "2023-05-01", dept: "Installer", position: "Team Leader Installer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20230601BB", name: "KAREN MENDOZA", date: "2023-06-01", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20230701CC", name: "LUIS FLORES", date: "2023-07-01", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20230801DD", name: "MARIA CRUZ", date: "2023-08-01", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20230901EE", name: "NATHAN VILLANUEVA", date: "2023-09-01", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20231001FF", name: "OLIVIA SANTOS", date: "2023-10-01", dept: "Engineering", position: "Electrical Engineer", status: "Inactive", lastLogin: "Never" },
+    { barcode: "SCPH20231101GG", name: "PAULO GARCIA", date: "2023-11-01", dept: "Installer", position: "Installer Sub Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20231201HH", name: "QUEEN TORRES", date: "2023-12-01", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20240101II", name: "RITA MENDOZA", date: "2024-01-01", dept: "Engineering", position: "Project Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20240201JJ", name: "SAMUEL REYES", date: "2024-02-01", dept: "Installer", position: "Installer Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20240301KK", name: "TERESA FLORES", date: "2024-03-01", dept: "Admin", position: "HR Officer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20240401LL", name: "ULYSSES CRUZ", date: "2024-04-01", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20240501MM", name: "VICTORIA SANTOS", date: "2024-05-01", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20240601NN", name: "WALTER GARCIA", date: "2024-06-01", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20240701OO", name: "XIMENA VILLANUEVA", date: "2024-07-01", dept: "Engineering", position: "Electrical Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20240801PP", name: "YOLANDA TORRES", date: "2024-08-01", dept: "Installer", position: "Team Leader Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20240901QQ", name: "ZACHARY MENDOZA", date: "2024-09-01", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20241001RR", name: "AMELIA REYES", date: "2024-10-01", dept: "Engineering", position: "Project Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20241101SS", name: "BRANDON FLORES", date: "2024-11-01", dept: "Installer", position: "Installer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20241201TT", name: "CATHERINE SANTOS", date: "2024-12-01", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250101UU", name: "DAVID GARCIA", date: "2025-01-01", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250102VV", name: "ELENA CRUZ", date: "2025-01-02", dept: "Installer", position: "Installer Sub Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250103WW", name: "FELIPE VILLANUEVA", date: "2025-01-03", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250104XX", name: "GLORIA TORRES", date: "2025-01-04", dept: "Engineering", position: "Electrical Engineer", status: "Inactive", lastLogin: "Never" },
+    { barcode: "SCPH20250105YY", name: "HENRY MENDOZA", date: "2025-01-05", dept: "Installer", position: "Installer Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250106ZZ", name: "IRIS REYES", date: "2025-01-06", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250107AA", name: "JAMES FLORES", date: "2025-01-07", dept: "Engineering", position: "Project Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250108BB", name: "KAREN SANTOS", date: "2025-01-08", dept: "Installer", position: "Installer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20250109CC", name: "LEONARDO GARCIA", date: "2025-01-09", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250110DD", name: "MAGDALENA CRUZ", date: "2025-01-10", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250111EE", name: "NICOLAS VILLANUEVA", date: "2025-01-11", dept: "Installer", position: "Team Leader Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250112FF", name: "OLIVIA TORRES", date: "2025-01-12", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250113GG", name: "PATRICIA MENDOZA", date: "2025-01-13", dept: "Engineering", position: "Electrical Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250114HH", name: "QUINCY REYES", date: "2025-01-14", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250115II", name: "RACHEL FLORES", date: "2025-01-15", dept: "Admin", position: "Accountant", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20250116JJ", name: "SERGIO SANTOS", date: "2025-01-16", dept: "Engineering", position: "Project Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250117KK", name: "TERESA GARCIA", date: "2025-01-17", dept: "Installer", position: "Installer Sub Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250118LL", name: "URIEL CRUZ", date: "2025-01-18", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250119MM", name: "VALENTINA VILLANUEVA", date: "2025-01-19", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250120NN", name: "WILLIAM TORRES", date: "2025-01-20", dept: "Installer", position: "Installer Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250121OO", name: "XIMENA MENDOZA", date: "2025-01-21", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250122PP", name: "YARA REYES", date: "2025-01-22", dept: "Engineering", position: "Electrical Engineer", status: "Inactive", lastLogin: "Never" },
+    { barcode: "SCPH20250123QQ", name: "ZEKE FLORES", date: "2025-01-23", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250124RR", name: "ALEXA SANTOS", date: "2025-01-24", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250125SS", name: "BENJAMIN GARCIA", date: "2025-01-25", dept: "Engineering", position: "Project Engineer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20250126TT", name: "CLARA CRUZ", date: "2025-01-26", dept: "Installer", position: "Team Leader Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250127UU", name: "DANTE VILLANUEVA", date: "2025-01-27", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250128VV", name: "EMMA TORRES", date: "2025-01-28", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250129WW", name: "FERNANDO MENDOZA", date: "2025-01-29", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250130XX", name: "GLORIA REYES", date: "2025-01-30", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250131YY", name: "HECTOR FLORES", date: "2025-01-31", dept: "Engineering", position: "Electrical Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250201ZZ", name: "IRIS SANTOS", date: "2025-02-01", dept: "Installer", position: "Installer Sub Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250202AA", name: "JORGE GARCIA", date: "2025-02-02", dept: "Admin", position: "Accountant", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20250203BB", name: "KATHERINE CRUZ", date: "2025-02-03", dept: "Engineering", position: "Project Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250204CC", name: "LUIS VILLANUEVA", date: "2025-02-04", dept: "Installer", position: "Installer Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250205DD", name: "MARTIN TORRES", date: "2025-02-05", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250206EE", name: "NATALIA MENDOZA", date: "2025-02-06", dept: "Engineering", position: "Site Engineer", status: "Inactive", lastLogin: "Never" },
+    { barcode: "SCPH20250207FF", name: "ORLANDO REYES", date: "2025-02-07", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250208GG", name: "PAMELA FLORES", date: "2025-02-08", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250209HH", name: "QUINTON SANTOS", date: "2025-02-09", dept: "Engineering", position: "Electrical Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250210II", name: "ROSA GARCIA", date: "2025-02-10", dept: "Installer", position: "Team Leader Installer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20250211JJ", name: "SAMUEL CRUZ", date: "2025-02-11", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250212KK", name: "TANYA VILLANUEVA", date: "2025-02-12", dept: "Engineering", position: "Project Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250213LL", name: "ULRICH TORRES", date: "2025-02-13", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250214MM", name: "VIOLET MENDOZA", date: "2025-02-14", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250215NN", name: "WAYNE REYES", date: "2025-02-15", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250216OO", name: "XIMENA FLORES", date: "2025-02-16", dept: "Installer", position: "Installer Sub Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250217PP", name: "YANCY SANTOS", date: "2025-02-17", dept: "Admin", position: "Driver", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20250218QQ", name: "ZACHARIAS GARCIA", date: "2025-02-18", dept: "Engineering", position: "Electrical Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250219RR", name: "ABIGAIL CRUZ", date: "2025-02-19", dept: "Installer", position: "Installer Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250220SS", name: "BERNARD VILLANUEVA", date: "2025-02-20", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250221TT", name: "CANDICE TORRES", date: "2025-02-21", dept: "Engineering", position: "Project Engineer", status: "Inactive", lastLogin: "Never" },
+    { barcode: "SCPH20250222UU", name: "DANE MENDOZA", date: "2025-02-22", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250223VV", name: "EVA REYES", date: "2025-02-23", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250224WW", name: "FRANK FLORES", date: "2025-02-24", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250225XX", name: "GISELLE SANTOS", date: "2025-02-25", dept: "Installer", position: "Team Leader Installer", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20250226YY", name: "HUNTER GARCIA", date: "2025-02-26", dept: "Admin", position: "Driver", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250227ZZ", name: "IRIS CRUZ", date: "2025-02-27", dept: "Engineering", position: "Electrical Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250228AA", name: "JULIAN VILLANUEVA", date: "2025-02-28", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250301BB", name: "KATHERINE TORRES", date: "2025-03-01", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250302CC", name: "LAWRENCE MENDOZA", date: "2025-03-02", dept: "Engineering", position: "Project Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250303DD", name: "MERCY REYES", date: "2025-03-03", dept: "Installer", position: "Installer Sub Team Leader", status: "Resigned", lastLogin: "Never" },
+    { barcode: "SCPH20250304EE", name: "NICHOLAS FLORES", date: "2025-03-04", dept: "Admin", position: "HR Officer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250305FF", name: "OPHELIA SANTOS", date: "2025-03-05", dept: "Engineering", position: "Site Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250306GG", name: "PAUL GARCIA", date: "2025-03-06", dept: "Installer", position: "Installer Team Leader", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250307HH", name: "QUINLEY CRUZ", date: "2025-03-07", dept: "Admin", position: "Driver", status: "Inactive", lastLogin: "Never" },
+    { barcode: "SCPH20250308II", name: "RONALD VILLANUEVA", date: "2025-03-08", dept: "Engineering", position: "Electrical Engineer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250309JJ", name: "STELLA TORRES", date: "2025-03-09", dept: "Installer", position: "Installer", status: "Active", lastLogin: "Never" },
+    { barcode: "SCPH20250310KK", name: "TOBIAS MENDOZA", date: "2025-03-10", dept: "Admin", position: "Accountant", status: "Active", lastLogin: "Never" }
+  ];
+
+  const searchInput = document.getElementById("searchInput");
+  const departmentFilter = document.getElementById("departmentFilter");
+
+  let currentPage = 1;
+  const entries = 10; // fixed 10 per page
+
+  function getFilteredData() {
+    const search = searchInput.value.toLowerCase();
+    const dept = departmentFilter.value;
+
+    return data.filter(item => {
+      const text = `${item.barcode} ${item.name} ${item.date} ${item.dept} ${item.position} ${item.status} ${item.lastLogin}`.toLowerCase();
+      return text.includes(search) && (dept === "" || dept === item.dept);
+    });
+  }
+
+  function renderTable() {
+    const filtered = getFilteredData();
+    const totalPages = Math.ceil(filtered.length / entries);
+
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+
+    const start = (currentPage - 1) * entries;
+    const pagedData = filtered.slice(start, start + entries);
+
+    const tbody = document.getElementById("employeeTable");
+    tbody.innerHTML = "";
+
+    pagedData.forEach(row => {
+      const statusClass =
+        row.status === "Resigned" ? "text-red-600" :
+        row.status === "Inactive" ? "text-yellow-600" :
+        "text-green-600";
+
+      tbody.innerHTML += `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3">${row.barcode}</td>
+          <td class="px-4 py-3">${row.name}</td>
+          <td class="px-4 py-3">${row.date}</td>
+          <td class="px-4 py-3 lowercase">${row.dept}</td>
+          <td class="px-4 py-3 uppercase text-xs">${row.position}</td>
+          <td class="px-4 py-3">
+            <span class="inline-block font-semibold ${statusClass}">
+              ${row.status}
+            </span>
+          </td>
+          <td class="px-4 py-3">${row.lastLogin}</td>
+        </tr>`;
+    });
+
+    renderPagination(filtered.length);
+  }
+
+  function renderPagination(totalItems) {
+    const totalPages = Math.ceil(totalItems / entries);
+    const paginationButtons = document.getElementById("paginationButtons");
+    const paginationInfo = document.getElementById("paginationInfo");
+
+    paginationButtons.innerHTML = "";
+    paginationInfo.textContent = `Showing ${Math.min((currentPage - 1) * entries + 1, totalItems)} to ${Math.min(currentPage * entries, totalItems)} of ${totalItems} entries`;
+
+    // Show page numbers with ellipsis
+    const maxVisiblePages = 7;
+    let startPage = 1;
+    let endPage = totalPages;
+
+    if (totalPages > maxVisiblePages) {
+      if (currentPage <= 4) {
+        endPage = maxVisiblePages;
+      } else if (currentPage >= totalPages - 3) {
+        startPage = totalPages - maxVisiblePages + 1;
+      } else {
+        startPage = currentPage - 3;
+        endPage = currentPage + 3;
+      }
+    }
+
+    // Previous button (arrow format)
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "‹";
+    prevBtn.className = "px-2 py-1 rounded border hover:bg-gray-100 disabled:opacity-50";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderTable(); } };
+    paginationButtons.appendChild(prevBtn);
+
+    // Page numbers before ellipsis
+    if (startPage > 1) {
+      for (let i = 1; i < startPage; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.className = `px-2 py-1 rounded border hover:bg-gray-100`;
+        btn.onclick = () => { currentPage = i; renderTable(); };
+        paginationButtons.appendChild(btn);
+      }
+      if (startPage > 2) {
+        const ellipsis = document.createElement("span");
+        ellipsis.textContent = "…";
+        ellipsis.className = "px-2 py-1";
+        paginationButtons.appendChild(ellipsis);
+      }
+    }
+
+    // Current range of pages
+    for (let i = startPage; i <= endPage; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.className = currentPage === i 
+        ? "px-2 py-1 rounded bg-indigo-600 text-white border border-indigo-600" 
+        : "px-2 py-1 rounded border hover:bg-gray-100";
+      btn.onclick = () => { currentPage = i; renderTable(); };
+      paginationButtons.appendChild(btn);
+    }
+
+    // Page numbers after ellipsis
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        const ellipsis = document.createElement("span");
+        ellipsis.textContent = "…";
+        ellipsis.className = "px-2 py-1";
+        paginationButtons.appendChild(ellipsis);
+      }
+      for (let i = Math.max(endPage + 1, totalPages - 1); i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.className = `px-2 py-1 rounded border hover:bg-gray-100`;
+        btn.onclick = () => { currentPage = i; renderTable(); };
+        paginationButtons.appendChild(btn);
+      }
+    }
+
+    // Next button (arrow format)
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "›";
+    nextBtn.className = "px-2 py-1 rounded border hover:bg-gray-100 disabled:opacity-50";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderTable(); } };
+    paginationButtons.appendChild(nextBtn);
+  }
+
+  searchInput.addEventListener("input", () => { currentPage = 1; renderTable(); });
+  departmentFilter.addEventListener("change", () => { currentPage = 1; renderTable(); });
+
+  renderTable();
+</script>
+
+</body>
+</html>

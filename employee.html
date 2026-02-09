@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employees</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="api-config.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white fixed left-0 top-0 h-screen z-40 flex flex-col">
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Admin Portal</p>
+    </div>
+
+    <nav class="flex-1 px-4 mt-4 space-y-1">
+      <a href="dashboard.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Dashboard</a>
+
+      <div>
+        <button onclick="toggleEmployeeMenu()"
+          class="w-full flex justify-between items-center px-4 py-2 rounded-lg bg-slate-700">
+          <span>Employee</span>
+          <svg id="employeeArrow" class="w-4 h-4 rotate-180 transition-transform"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+
+        <div id="employeeMenu" class="ml-4 mt-1 space-y-1">
+          <a href="employee.html" class="block px-4 py-2 rounded-lg text-sm bg-indigo-600 font-semibold">
+            Employee List
+          </a>
+          <a href="add-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Add Employee</a>
+          <a href="manage-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Manage Employee</a>
+          <a href="no-show.html" class="block px-4 py-2 rounded-lg text-sm text-red-300 hover:bg-slate-700">
+            No Show No Call
+          </a>
+        </div>
+      </div>
+
+      <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Leave Request</a>
+      <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Attendance</a>
+      <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Tap Login</a>
+    </nav>
+
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p class="font-semibold">Admin</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="ml-64 p-6 w-full">
+
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">Employee List</h1>
+      <p class="text-sm text-gray-500">All Departments</p>
+    </div>
+
+    <section class="bg-white rounded-xl shadow p-6">
+
+      <!-- CONTROLS -->
+      <div class="flex flex-col md:flex-row justify-between gap-4 mb-4">
+        <select id="departmentFilter" class="border rounded-lg px-4 py-2 text-sm bg-white">
+          <option value="">All Departments</option>
+          <option>Marketing</option>
+          <option>Sales</option>
+          <option>Engineering</option>
+          <option>Finance</option>
+          <option>Human Resources</option>
+          <option>Installer</option>
+        </select>
+
+        <input id="searchInput" type="text" placeholder="Search..."
+          class="border rounded-lg px-4 py-2 text-sm w-full md:w-72" />
+      </div>
+
+      <!-- TABLE -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse text-center">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border px-4 py-3">Barcode ID</th>
+              <th class="border px-4 py-3">Name</th>
+              <th class="border px-4 py-3">Employed Date</th>
+              <th class="border px-4 py-3">Department</th>
+              <th class="border px-4 py-3">Position</th>
+              <th class="border px-4 py-3">Status</th>
+            </tr>
+          </thead>
+
+          <tbody id="employeeTable">
+            <!-- ROWS HERE -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="mt-4 flex flex-col md:flex-row justify-between items-center gap-2">
+        <div class="text-sm text-gray-600" id="paginationInfo"></div>
+        <div class="flex gap-2 flex-wrap justify-center" id="paginationButtons"></div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<script>
+  let allEmployees = [];
+  const searchInput = document.getElementById("searchInput");
+  const departmentFilter = document.getElementById("departmentFilter");
+
+  let currentPage = 1;
+  const entries = 10;
+
+  // Load employees from API
+  async function loadEmployees() {
+    try {
+      allEmployees = await employeeAPI.getAll();
+      currentPage = 1;
+      renderTable();
+    } catch (error) {
+      console.error('Error loading employees:', error);
+      document.getElementById('employeeTable').innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-600">Error loading employees</td></tr>';
+    }
+  }
+
+  function getFilteredData() {
+    const search = searchInput.value.toLowerCase();
+    const dept = departmentFilter.value;
+
+    return allEmployees.filter(item => {
+      const text = `${item.barcode} ${item.name} ${item.employed_date} ${item.department} ${item.position} ${item.status}`.toLowerCase();
+      return text.includes(search) && (dept === "" || dept === item.department);
+    });
+  }
+
+  function renderTable() {
+    const filtered = getFilteredData();
+    const totalPages = Math.ceil(filtered.length / entries);
+
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+
+    const start = (currentPage - 1) * entries;
+    const pagedData = filtered.slice(start, start + entries);
+
+    const tbody = document.getElementById("employeeTable");
+    tbody.innerHTML = "";
+
+    pagedData.forEach(row => {
+      const statusClass =
+        row.status === "Resigned" ? "bg-red-50 text-red-700 border-red-200" :
+        row.status === "Inactive" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+        "bg-green-50 text-green-700 border-green-200";
+
+      tbody.innerHTML += `
+        <tr class="hover:bg-gray-50">
+          <td class="border px-4 py-3">${row.barcode}</td>
+          <td class="border px-4 py-3">${row.name}</td>
+          <td class="border px-4 py-3">${row.employed_date}</td>
+          <td class="border px-4 py-3">${row.department}</td>
+          <td class="border px-4 py-3">${row.position}</td>
+          <td class="border px-4 py-3">
+            <span class="inline-flex items-center justify-center w-28 h-8 rounded-md text-xs font-semibold border ${statusClass}">
+              <span class="leading-none">${row.status}</span>
+            </span>
+          </td>
+        </tr>`;
+    });
+
+    renderPagination(filtered.length);
+  }
+
+  function renderPagination(totalItems) {
+    const totalPages = Math.ceil(totalItems / entries);
+    const paginationButtons = document.getElementById("paginationButtons");
+    const paginationInfo = document.getElementById("paginationInfo");
+
+    paginationButtons.innerHTML = "";
+    paginationInfo.textContent = `Showing ${Math.min((currentPage - 1) * entries + 1, totalItems)} - ${Math.min(currentPage * entries, totalItems)} of ${totalItems}`;
+
+    const baseBtn = "w-9 h-9 text-sm font-medium border";
+
+    const disabled = "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed";
+    const normal = "bg-white text-gray-700 border-gray-300 hover:bg-gray-50";
+    const active = "bg-indigo-600 text-white border-indigo-600";
+
+    // Previous
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "‹";
+    prevBtn.className = `${baseBtn} ${currentPage === 1 ? disabled : normal}`;
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => { currentPage--; renderTable(); };
+    paginationButtons.appendChild(prevBtn);
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.className = `${baseBtn} ${currentPage === i ? active : normal}`;
+      btn.onclick = () => { currentPage = i; renderTable(); };
+      paginationButtons.appendChild(btn);
+    }
+
+    // Next
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "›";
+    nextBtn.className = `${baseBtn} ${currentPage === totalPages ? disabled : normal}`;
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => { currentPage++; renderTable(); };
+    paginationButtons.appendChild(nextBtn);
+  }
+
+  searchInput.addEventListener("input", () => { currentPage = 1; renderTable(); });
+  departmentFilter.addEventListener("change", () => { currentPage = 1; renderTable(); });
+
+  function toggleEmployeeMenu() {
+    document.getElementById("employeeMenu").classList.toggle("hidden");
+    document.getElementById("employeeArrow").classList.toggle("rotate-180");
+  }
+
+  // Logout functionality
+  document.querySelector('.text-red-400').addEventListener('click', () => {
+    window.location.href = 'auth-login.html';
+  });
+
+  // Load employees on page load
+  loadEmployees();
+</script>
+
+</body>
+</html>

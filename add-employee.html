@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Employee</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- API Config -->
+  <script src="api-config.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col fixed left-0 top-0 h-screen z-40">
+
+    <!-- BRAND -->
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Admin Portal</p>
+    </div>
+
+    <!-- NAV -->
+    <nav class="flex-1 px-4 mt-4 space-y-1">
+
+      <a href="dashboard.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Dashboard
+      </a>
+
+      <!-- EMPLOYEE -->
+      <div>
+        <button onclick="toggleEmployeeMenu()"
+          class="w-full flex justify-between items-center px-4 py-2 rounded-lg hover:bg-slate-700">
+          <span>Employee</span>
+          <svg id="employeeArrow"
+               class="w-4 h-4 transition-transform rotate-180"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <!-- SUB MENU -->
+        <div id="employeeMenu" class="ml-4 mt-1 space-y-1">
+
+          <a href="employee.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Employee List
+          </a>
+
+          <a href="add-employee.html"
+             class="block px-4 py-2 rounded-lg text-sm bg-indigo-600 font-semibold">
+            Add Employee
+          </a>
+
+          <a href="manage-employee.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Manage Employee
+          </a>
+
+          <a href="no-show.html"
+             class="block px-4 py-2 rounded-lg text-sm text-red-300 hover:bg-slate-700">
+            No Show No Call
+          </a>
+
+        </div>
+      </div>
+
+      <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Leave Request
+      </a>
+
+      
+
+      <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Attendance
+      </a>
+
+      <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Tap Login
+      </a>
+
+    </nav>
+
+    <!-- FOOTER -->
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p class="font-semibold">Admin</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="ml-64 p-8 w-full flex justify-center">
+    <div class="w-full max-w-4xl">
+
+      <!-- HEADER -->
+      <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Add Employee</h1>
+        <p class="text-sm text-gray-500">Create a new employee record</p>
+      </div>
+
+      <!-- FORM -->
+      <form class="bg-white rounded-xl shadow-lg p-8 space-y-6" id="employeeForm">
+
+        <!-- MESSAGE -->
+        <div id="message" class="hidden p-4 rounded-lg text-white"></div>
+
+        <!-- BASIC INFO -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Full Name</label>
+            <input type="text" id="name" placeholder="Enter full name"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200" required>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Phone Number</label>
+            <input type="text" id="phone" placeholder="Enter phone number"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Address</label>
+            <input type="text" id="address" placeholder="Enter address"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Birthdate</label>
+            <input type="date" id="birthdate"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Position</label>
+            <input type="text" id="position" placeholder="Enter position"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200" required>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Employed Date</label>
+            <input type="date" id="employed_date"
+              class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200" required>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Department</label>
+            <select id="department" class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200" required>
+              <option value="">Select department</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Sales">Sales</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Finance">Finance</option>
+              <option value="Human Resources">Human Resources</option>
+              <option value="Installer">Installer</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+
+        </div>
+
+        <!-- EMERGENCY CONTACT -->
+        <div class="border-t pt-6">
+          <h2 class="font-semibold mb-4">Emergency Contact Details</h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div>
+              <label class="block text-sm font-medium mb-1">Contact Person Name</label>
+              <input type="text" id="emergency_contact_name" placeholder="Enter contact person's name"
+                class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">Contact Person Phone</label>
+              <input type="text" id="emergency_contact_phone" placeholder="Enter contact person's phone"
+                class="w-full border rounded-lg px-3 py-2 focus:ring focus:ring-indigo-200">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SUBMIT -->
+        <div class="pt-6 flex justify-end gap-3">
+          <button type="reset"
+            class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+            Clear
+          </button>
+          <button type="submit"
+            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+            Submit
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </main>
+
+</div>
+
+<!-- SUCCESS MODAL -->
+<div id="successModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-8 w-96 text-center space-y-4 shadow-lg">
+    <div class="text-5xl">✓</div>
+    <h2 class="text-2xl font-bold text-green-600">Success!</h2>
+    <p class="text-gray-600">Employee has been created successfully</p>
+    
+    <div class="bg-gray-50 p-4 rounded-lg text-left space-y-2">
+      <p class="text-sm"><span class="font-semibold">Name:</span> <span id="displayName"></span></p>
+      <p class="text-sm"><span class="font-semibold">Barcode:</span> <span id="displayBarcode"></span></p>
+      <p class="text-sm"><span class="font-semibold">Department:</span> <span id="displayDept"></span></p>
+      <p class="text-sm"><span class="font-semibold">Position:</span> <span id="displayPos"></span></p>
+    </div>
+    
+    <button onclick="closeModal()" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">
+      Go to Employee List
+    </button>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('employeeForm');
+  const messageDiv = document.getElementById('message');
+  const successModal = document.getElementById('successModal');
+
+
+
+  function showMessage(text, isSuccess = true) {
+    messageDiv.className = isSuccess
+      ? 'p-4 rounded-lg text-white bg-green-600'
+      : 'p-4 rounded-lg text-white bg-red-600';
+    messageDiv.textContent = text;
+    messageDiv.classList.remove('hidden');
+
+    setTimeout(() => {
+      messageDiv.classList.add('hidden');
+    }, 3000);
+  }
+
+  function closeModal() {
+    successModal.classList.add('hidden');
+    successModal.classList.remove('flex');
+    window.location.href = 'employee.html';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const employeeData = {
+      name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
+      address: document.getElementById('address').value,
+      birthdate: document.getElementById('birthdate').value,
+      position: document.getElementById('position').value,
+      employed_date: document.getElementById('employed_date').value,
+      department: document.getElementById('department').value,
+      emergency_contact_name: document.getElementById('emergency_contact_name').value,
+      emergency_contact_phone: document.getElementById('emergency_contact_phone').value
+    };
+
+    try {
+      const result = await employeeAPI.create(employeeData);
+
+      // Show success modal with employee details
+      document.getElementById('displayName').textContent = result.name;
+      document.getElementById('displayBarcode').textContent = result.barcode;
+      document.getElementById('displayDept').textContent = result.department;
+      document.getElementById('displayPos').textContent = result.position;
+
+      successModal.classList.remove('hidden');
+      successModal.classList.add('flex');
+
+      form.reset();
+    } catch (error) {
+      showMessage('✗ Error adding employee: ' + error.message, false);
+    }
+  });
+
+  function toggleEmployeeMenu() {
+    document.getElementById("employeeMenu").classList.toggle("hidden");
+    document.getElementById("employeeArrow").classList.toggle("rotate-180");
+  }
+
+  // Logout functionality
+  document.querySelector('.text-red-400').addEventListener('click', () => {
+    window.location.href = 'auth-login.html';
+  });
+</script>
+
+</body>
+</html>

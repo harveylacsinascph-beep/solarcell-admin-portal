@@ -1,0 +1,262 @@
+t<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leave Request</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white fixed left-0 top-0 h-screen z-40 flex flex-col">
+
+    <!-- BRAND -->
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Admin Portal</p>
+    </div>
+
+    <!-- NAVIGATION -->
+    <nav class="flex-1 px-4 mt-4 space-y-1">
+
+      <!-- DASHBOARD -->
+      <a href="dashboard.html"
+         class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Dashboard
+      </a>
+
+      <!-- EMPLOYEE DROPDOWN -->
+      <div>
+        <button
+          onclick="toggleEmployeeMenu()"
+          class="w-full flex justify-between items-center px-4 py-2 rounded-lg hover:bg-slate-700 focus:outline-none">
+          <span>Employee</span>
+          <svg id="employeeArrow" class="w-4 h-4 transition-transform"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <!-- SUB MENU -->
+        <div id="employeeMenu" class="ml-4 mt-1 space-y-1 hidden">
+
+          <a href="employee.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Employee List
+          </a>
+
+          <a href="add-employee.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Add Employee
+          </a>
+
+          <a href="manage-employee.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Manage Employee
+          </a>
+
+          <a href="no-show.html"
+             class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700 text-red-300 hover:text-red-200">
+            No Show No Call
+          </a>
+
+        </div>
+      </div>
+
+      <!-- OTHER LINKS -->
+      <a href="leave.html" class="block px-4 py-2 rounded-lg bg-indigo-600 font-semibold">
+        Leave Request
+      </a>
+
+      <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Attendance
+      </a>
+
+      <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Tap Login
+      </a>
+
+    </nav>
+
+    <!-- FOOTER -->
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p class="font-semibold">Admin</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="ml-64 w-full p-6">
+
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">Leave Requests</h1>
+      <p class="text-sm text-gray-500">Click a request to review details</p>
+    </div>
+
+    <section class="bg-white rounded-xl shadow p-6">
+
+      <!-- TABLE -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse text-center">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border px-4 py-3">ID</th>
+              <th class="border px-4 py-3">Name</th>
+              <th class="border px-4 py-3">Leave Type</th>
+              <th class="border px-4 py-3">Dates</th>
+              <th class="border px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody id="leaveTable"></tbody>
+        </table>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl w-full max-w-lg p-6">
+    <h2 class="text-xl font-bold mb-4">Leave Request Details</h2>
+
+    <div class="space-y-2 text-sm">
+      <p><strong>Name:</strong> <span id="m-name"></span></p>
+      <p><strong>Leave Type:</strong> <span id="m-type"></span></p>
+      <p><strong>Start:</strong> <span id="m-start"></span></p>
+      <p><strong>End:</strong> <span id="m-end"></span></p>
+      <p><strong>Reason:</strong></p>
+      <p id="m-reason" class="bg-gray-100 p-3 rounded text-gray-700"></p>
+    </div>
+
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="closeModal()" class="px-4 py-2 rounded bg-gray-200">Close</button>
+      <button onclick="setStatus('Denied')" class="px-4 py-2 rounded bg-red-600 text-white">Deny</button>
+      <button onclick="setStatus('Approved')" class="px-4 py-2 rounded bg-green-600 text-white">Approve</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // This is the missing function
+  function toggleEmployeeMenu() {
+    document.getElementById("employeeMenu").classList.toggle("hidden");
+    document.getElementById("employeeArrow").classList.toggle("rotate-180");
+  }
+
+  let selectedId = null;
+
+  let data = [];
+
+  function statusBadge(status) {
+    if (status === "Approved") return "bg-green-600";
+    if (status === "Denied") return "bg-red-600";
+    return "bg-blue-600";
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("leaveTable");
+    tbody.innerHTML = "";
+
+    data.forEach(row => {
+      tbody.innerHTML += `
+        <tr onclick="openModal(${row.id})"
+            class="border-b hover:bg-gray-50 cursor-pointer">
+          <td class="border px-4 py-3">${row.id}</td>
+          <td class="border px-4 py-3 font-medium">${row.name}</td>
+          <td class="border px-4 py-3">${row.type}</td>
+          <td class="border px-4 py-3">${row.start} → ${row.end}</td>
+          <td class="border px-4 py-3">
+            <span class="inline-flex items-center justify-center w-24 h-8 rounded-md text-xs font-semibold text-white ${statusBadge(row.status)}">
+              ${row.status}
+            </span>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  function openModal(id) {
+    const item = data.find(d => d.id === id);
+    selectedId = id;
+
+    document.getElementById("m-name").textContent = item.name;
+    document.getElementById("m-type").textContent = item.type;
+    document.getElementById("m-start").textContent = item.start;
+    document.getElementById("m-end").textContent = item.end;
+    document.getElementById("m-reason").textContent = item.reason;
+
+    document.getElementById("modal").classList.remove("hidden");
+    document.getElementById("modal").classList.add("flex");
+  }
+
+  function closeModal() {
+    document.getElementById("modal").classList.add("hidden");
+    document.getElementById("modal").classList.remove("flex");
+  }
+
+  // Load leave requests from API
+  async function loadLeaveRequests() {
+    try {
+      console.log('Loading leave requests...');
+      const response = await fetch('http://localhost:3001/api/leave-requests');
+      console.log('Response status:', response.status);
+      const leaveRequests = await response.json();
+      console.log('Leave requests data:', leaveRequests);
+
+      data = leaveRequests.map(req => ({
+        id: req.id,
+        name: req.name,
+        start: req.start_date,
+        end: req.end_date,
+        type: req.leave_type,
+        reason: req.reason,
+        status: req.status
+      }));
+
+      console.log('Mapped data:', data);
+      renderTable();
+    } catch (error) {
+      console.error('Error loading leave requests:', error);
+    }
+  }
+
+  async function setStatus(status) {
+    try {
+      const response = await fetch(`http://localhost:3001/api/leave-requests/${selectedId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+      });
+
+      if (response.ok) {
+        closeModal();
+        loadLeaveRequests();
+      } else {
+        alert('Failed to update leave request status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Error updating leave request status');
+    }
+  }
+
+  loadLeaveRequests();
+
+  // Logout functionality
+  document.querySelector('.text-red-400').addEventListener('click', () => {
+    window.location.href = 'auth-login.html';
+  });
+</script>
+
+</body>
+</html>

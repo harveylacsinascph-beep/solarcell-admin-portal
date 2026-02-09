@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SolarCell PH</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="api-config.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col fixed left-0 top-0 h-screen z-40">
+
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Admin Portal</p>
+    </div>
+
+    <nav class="flex-1 px-4 mt-4 space-y-1">
+
+      <a href="dashboard.html" class="block px-4 py-2 rounded-lg bg-indigo-600 font-semibold">
+        Dashboard
+      </a>
+
+      <div>
+        <button onclick="toggleEmployeeMenu()"
+          class="w-full flex justify-between items-center px-4 py-2 rounded-lg hover:bg-slate-700">
+          <span>Employee</span>
+          <svg id="employeeArrow" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div id="employeeMenu" class="ml-4 mt-1 space-y-1 hidden">
+          <a href="employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Employee List</a>
+          <a href="add-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Add Employee</a>
+          <a href="manage-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Manage Employee</a>
+          <a href="no-show.html" class="block px-4 py-2 rounded-lg text-sm text-red-300 hover:bg-slate-700">
+            No Show No Call
+          </a>
+        </div>
+      </div>
+
+      <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Leave Request</a>
+      
+      <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Attendance</a>
+      <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Tap Login</a>
+
+    </nav>
+
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p class="font-semibold">Admin</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="ml-64 p-8 w-full">
+
+    <h1 class="text-3xl font-bold">Dashboard</h1>
+    <p class="text-gray-500 mb-6">Welcome back! Here's your overview.</p>
+
+    <!-- ANNOUNCEMENTS -->
+<div class="bg-white rounded-xl p-4 shadow mb-8">
+  <h2 class="text-lg font-semibold mb-3">Recent Announcements</h2>
+
+  <div id="announcementsList" class="space-y-3 max-h-48 overflow-y-auto">
+    <!-- Announcements will be loaded dynamically -->
+  </div>
+</div>
+
+
+    <!-- STATS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <!-- stats unchanged -->
+<!-- TOTAL EMPLOYEES -->
+<div class="bg-white rounded-xl p-6 shadow flex justify-between items-center">
+  <div>
+    <p class="text-gray-500">Total Employees</p>
+    <h2 id="totalEmployees" class="text-3xl font-bold">10</h2>
+  </div>
+  <div class="w-12 h-12 bg-blue-500 text-white rounded-lg flex items-center justify-center">
+    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+      <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/>
+    </svg>
+  </div>
+</div>
+
+<!-- PRESENT TODAY -->
+<div class="bg-white rounded-xl p-6 shadow flex justify-between items-center">
+  <div>
+    <p class="text-gray-500">Present Today</p>
+    <h2 id="presentToday" class="text-3xl font-bold">no DATA</h2>
+  </div>
+  <div class="w-12 h-12 bg-green-500 text-white rounded-lg flex items-center justify-center">
+    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+      <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 11h-4V7h2v4h2v2z"/>
+    </svg>
+  </div>
+</div>
+
+<!-- PENDING LEAVES -->
+<div class="bg-white rounded-xl p-6 shadow flex justify-between items-center">
+  <div>
+    <p class="text-gray-500">Pending Leaves</p>
+    <h2 id="pendingLeaves" class="text-3xl font-bold">3</h2>
+  </div>
+  <div class="w-12 h-12 bg-orange-500 text-white rounded-lg flex items-center justify-center">
+    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+      <path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5L14 3.5z"/>
+    </svg>
+  </div>
+</div>
+    </div>
+
+    <!-- CONTENT GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- POST ANNOUNCEMENT -->
+      <div class="bg-white rounded-xl p-6 shadow">
+        <h2 class="text-xl font-semibold mb-4">Post Announcement</h2>
+
+        <div class="space-y-4">
+          <input type="text" placeholder="Title" class="w-full p-3 border rounded-lg">
+          <textarea rows="4" placeholder="Content" class="w-full p-3 border rounded-lg"></textarea>
+          <button id="postAnnouncementBtn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700">
+            Post Announcement
+          </button>
+        </div>
+      </div>
+
+      <!-- LEAVE BREAKDOWN -->
+      <div class="bg-white rounded-xl p-6 shadow">
+        <h2 class="text-xl font-semibold mb-4">Pending Leave Requests</h2>
+
+        <div class="space-y-3">
+          <div class="flex justify-between bg-gray-100 p-4 rounded-lg">
+            <span>Sick Leave</span>
+            <span id="pendingSick" class="font-bold">0</span>
+          </div>
+          <div class="flex justify-between bg-gray-100 p-4 rounded-lg">
+            <span>Vacation Leave</span>
+            <span id="pendingVacation" class="font-bold">0</span>
+          </div>
+          <div class="flex justify-between bg-gray-100 p-4 rounded-lg">
+            <span>Emergency Leave</span>
+            <span id="pendingEmergency" class="font-bold">0</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CALENDAR SECTION -->
+<div class="bg-white rounded-xl shadow p-6 mt-10">
+  <h2 class="text-xl font-semibold mb-4">Company Calendar</h2>
+  <div id="calendar"></div>
+</div>
+
+<!-- MODAL FOR EVENT ACTIONS -->
+<div id="eventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+    <h3 id="modalTitle" class="text-lg font-semibold mb-4">Event Details</h3>
+    <div class="space-y-4">
+      <input type="text" id="eventTitle" placeholder="Event Title" class="w-full p-3 border rounded-lg">
+      <textarea id="eventDescription" placeholder="Event Description" rows="3" class="w-full p-3 border rounded-lg"></textarea>
+      <input type="date" id="eventDate" class="w-full p-3 border rounded-lg">
+    </div>
+    <div class="flex justify-end space-x-2 mt-6">
+      <button id="cancelBtn" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+      <button id="deleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 hidden">Delete</button>
+      <button id="saveBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
+    </div>
+  </div>
+</div>
+
+  </main>
+</div>
+
+<script>
+  let calendar;
+  let currentEvent = null;
+  let isEditing = false;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const calendarEl = document.getElementById("calendar");
+
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: "dayGridMonth",
+      height: "auto",
+      headerToolbar: {
+        left: "prev,next",
+        center: "title",
+        right: ""
+      },
+
+      // ✅ LOAD EVENTS FROM BACKEND
+      events: async (info, successCallback, failureCallback) => {
+        try {
+          const events = await scheduleAPI.getAll();
+          successCallback(events.map(e => ({
+            id: e.id,
+            title: e.title,
+            start: e.event_date,
+            extendedProps: {
+              description: e.description
+            }
+          })));
+        } catch (err) {
+          console.error("Calendar load failed", err);
+          failureCallback(err);
+        }
+      },
+
+      // ✅ CLICK DATE → SHOW MODAL FOR NEW EVENT
+      dateClick: (info) => {
+        showEventModal(null, info.dateStr);
+      },
+
+      // ✅ CLICK EVENT → SHOW MODAL FOR EDIT/DELETE
+      eventClick: (info) => {
+        showEventModal(info.event);
+      }
+    });
+
+    calendar.render();
+
+    // Modal event listeners
+    document.getElementById('cancelBtn').addEventListener('click', hideEventModal);
+    document.getElementById('saveBtn').addEventListener('click', saveEvent);
+    document.getElementById('deleteBtn').addEventListener('click', deleteEvent);
+  });
+
+  function showEventModal(event, dateStr = null) {
+    const modal = document.getElementById('eventModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const titleInput = document.getElementById('eventTitle');
+    const descInput = document.getElementById('eventDescription');
+    const dateInput = document.getElementById('eventDate');
+    const deleteBtn = document.getElementById('deleteBtn');
+
+    currentEvent = event;
+    isEditing = !!event;
+
+    if (event) {
+      modalTitle.textContent = 'Edit Event';
+      titleInput.value = event.title;
+      descInput.value = event.extendedProps?.description || '';
+      dateInput.value = event.startStr;
+      deleteBtn.classList.remove('hidden');
+    } else {
+      modalTitle.textContent = 'Create New Event';
+      titleInput.value = '';
+      descInput.value = '';
+      dateInput.value = dateStr;
+      deleteBtn.classList.add('hidden');
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  function hideEventModal() {
+    document.getElementById('eventModal').classList.add('hidden');
+    currentEvent = null;
+    isEditing = false;
+  }
+
+  async function saveEvent() {
+    const title = document.getElementById('eventTitle').value.trim();
+    const description = document.getElementById('eventDescription').value.trim();
+    const date = document.getElementById('eventDate').value;
+
+    if (!title || !date) {
+      alert('Please fill in title and date');
+      return;
+    }
+
+    try {
+      if (isEditing) {
+        // For editing, we need to update the event
+        // Since the API doesn't have an update endpoint, we'll delete and recreate
+        await scheduleAPI.delete(currentEvent.id);
+        const saved = await scheduleAPI.create({
+          title,
+          event_date: date,
+          description
+        });
+        currentEvent.remove();
+        calendar.addEvent({
+          id: saved.id,
+          title: saved.title,
+          start: saved.event_date
+        });
+      } else {
+        const saved = await scheduleAPI.create({
+          title,
+          event_date: date,
+          description
+        });
+        calendar.addEvent({
+          id: saved.id,
+          title: saved.title,
+          start: saved.event_date
+        });
+      }
+
+      calendar.refetchEvents();
+      hideEventModal();
+    } catch (err) {
+      alert("Failed to save event");
+      console.error(err);
+    }
+  }
+
+  async function deleteEvent() {
+    if (!confirm('Are you sure you want to delete this event?')) return;
+
+    try {
+      await scheduleAPI.delete(currentEvent.id);
+      currentEvent.remove();
+      hideEventModal();
+    } catch (err) {
+      alert("Failed to delete event");
+      console.error(err);
+    }
+  }
+</script>
+
+
+<script>
+  function toggleEmployeeMenu() {
+    document.getElementById("employeeMenu").classList.toggle("hidden");
+    document.getElementById("employeeArrow").classList.toggle("rotate-180");
+  }
+
+  async function loadDashboard() {
+    try {
+      const employees = await employeeAPI.getAll();
+      const leaveRequests = await leaveAPI.getAll();
+      const attendance = await attendanceAPI.getAll();
+
+      document.getElementById("totalEmployees").textContent = employees.length;
+
+      // Calculate present today: employees who checked in today (time_in set)
+      const today = new Date().toISOString().split('T')[0];
+      const presentEmployees = new Set(attendance.filter(a => a.date === today && a.time_in).map(a => a.employee_id));
+      document.getElementById("presentToday").textContent = presentEmployees.size;
+
+      const pending = leaveRequests.filter(l => l.status === "Pending");
+      document.getElementById("pendingLeaves").textContent = pending.length;
+
+      document.getElementById("pendingSick").textContent =
+        pending.filter(l => l.leave_type === "Sick Leave").length;
+
+      document.getElementById("pendingVacation").textContent =
+        pending.filter(l => l.leave_type === "Vacation Leave").length;
+
+      document.getElementById("pendingEmergency").textContent =
+        pending.filter(l => l.leave_type === "Emergency Leave").length;
+
+    } catch (err) {
+      console.error("Dashboard load failed:", err);
+    }
+  }
+
+  async function loadAnnouncements() {
+    try {
+      const announcements = await announcementAPI.getAll();
+      const container = document.getElementById('announcementsList');
+
+      if (announcements.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm">No announcements yet.</p>';
+        return;
+      }
+
+      container.innerHTML = announcements.map(announcement => {
+        const date = new Date(announcement.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+
+        return `
+          <div class="flex items-start gap-2 p-3 bg-gray-100 rounded-lg relative">
+            <span class="text-xl">📢</span>
+            <div class="flex-1">
+              <div class="font-semibold text-sm">${announcement.title}</div>
+              <div class="text-xs text-gray-600">${announcement.content}</div>
+              <div class="text-[11px] text-gray-400 mt-1">${date}</div>
+            </div>
+            <button onclick="deleteAnnouncement(${announcement.id})" class="text-red-500 hover:text-red-700 text-sm ml-2" title="Delete Announcement">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.error("Failed to load announcements:", err);
+      document.getElementById('announcementsList').innerHTML =
+        '<p class="text-red-500 text-sm">Failed to load announcements.</p>';
+    }
+  }
+
+  async function postAnnouncement() {
+    const titleInput = document.querySelector('input[placeholder="Title"]');
+    const contentTextarea = document.querySelector('textarea[placeholder="Content"]');
+    const button = document.getElementById('postAnnouncementBtn');
+
+    const title = titleInput.value.trim();
+    const content = contentTextarea.value.trim();
+
+    if (!title || !content) {
+      alert('Please fill in both title and content');
+      return;
+    }
+
+    // Disable button and show loading
+    button.disabled = true;
+    button.textContent = 'Posting...';
+
+    try {
+      await announcementAPI.create({ title, content });
+
+      // Clear form
+      titleInput.value = '';
+      contentTextarea.value = '';
+
+      // Reload announcements
+      await loadAnnouncements();
+
+      alert('Announcement posted successfully!');
+    } catch (err) {
+      console.error('Failed to post announcement:', err);
+      alert('Failed to post announcement. Please try again.');
+    } finally {
+      // Re-enable button
+      button.disabled = false;
+      button.textContent = 'Post Announcement';
+    }
+  }
+
+  // Initialize dashboard and announcements
+  loadDashboard();
+  loadAnnouncements();
+
+  async function deleteAnnouncement(id) {
+    if (!confirm('Are you sure you want to delete this announcement?')) {
+      return;
+    }
+
+    try {
+      await announcementAPI.delete(id);
+      alert('Announcement deleted successfully!');
+      await loadAnnouncements(); // Refresh the list
+    } catch (err) {
+      console.error('Failed to delete announcement:', err);
+      alert('Failed to delete announcement. Please try again.');
+    }
+  }
+
+  // Add event listener for post announcement button
+  document.getElementById('postAnnouncementBtn').addEventListener('click', postAnnouncement);
+
+  // Logout functionality
+  document.querySelector('.text-red-400').addEventListener('click', () => {
+    window.location.href = 'auth-login.html';
+  });
+</script>
+
+</body>
+</html>

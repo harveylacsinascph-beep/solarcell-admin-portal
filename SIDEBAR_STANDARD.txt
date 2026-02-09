@@ -1,0 +1,51 @@
+STANDARD SIDEBAR TEMPLATE - Copy this to all pages:
+
+<!-- SIDEBAR -->
+<aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white fixed left-0 top-0 h-screen z-40 flex flex-col">
+  <div class="p-6 border-b border-slate-700">
+    <h1 class="text-xl font-bold">SolarCell PH</h1>
+    <p class="text-sm text-slate-400">Admin Portal</p>
+  </div>
+
+  <nav class="flex-1 px-4 mt-4 space-y-1">
+    <a href="dashboard.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Dashboard</a>
+
+    <div>
+      <button onclick="toggleEmployeeMenu()"
+        class="w-full flex justify-between items-center px-4 py-2 rounded-lg hover:bg-slate-700">
+        <span>Employee</span>
+        <svg id="employeeArrow" class="w-4 h-4 transition-transform"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+
+      <div id="employeeMenu" class="ml-4 mt-1 space-y-1 hidden">
+        <a href="employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Employee List</a>
+        <a href="add-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Add Employee</a>
+        <a href="manage-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Manage Employee</a>
+        <a href="no-show.html" class="block px-4 py-2 rounded-lg text-sm text-red-300 hover:bg-slate-700">No Show No Call</a>
+      </div>
+    </div>
+
+    <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Leave Request</a>
+    <a href="schedule.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Schedule</a>
+    <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Attendance</a>
+    <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Tap Login</a>
+    <a href="id.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Employee ID</a>
+  </nav>
+
+  <div class="p-4 border-t border-slate-700">
+    <p class="text-sm text-slate-400">Logged in as</p>
+    <p class="font-semibold">Admin</p>
+    <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+  </div>
+</aside>
+
+IMPORTANT NOTES:
+- Every page should have: ml-64 on main to account for fixed sidebar
+- Every page should have toggleEmployeeMenu() function in script
+- Current page link should have: bg-indigo-600 font-semibold
+- Menu should start HIDDEN: class="hidden" on employeeMenu div
+- When opening Employee menu, it should SHOW and arrow should ROTATE

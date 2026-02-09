@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Attendance Scanner</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- QR Scanner -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col fixed left-0 top-0 h-screen z-40">
+
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Admin Portal</p>
+    </div>
+
+    <nav class="flex-1 px-4 mt-4 space-y-1">
+      <a href="dashboard.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Dashboard</a>
+      
+      <!-- EMPLOYEE DROPDOWN -->
+      <div>
+        <button onclick="toggleEmployeeMenu()"
+          class="w-full flex justify-between items-center px-4 py-2 rounded-lg hover:bg-slate-700">
+          <span>Employee</span>
+          <svg id="employeeArrow" class="w-4 h-4 transition-transform"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <!-- SUB MENU -->
+        <div id="employeeMenu" class="ml-4 mt-1 space-y-1 hidden">
+          <a href="employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Employee List</a>
+          <a href="add-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Add Employee</a>
+          <a href="manage-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">Manage Employee</a>
+          <a href="no-show.html" class="block px-4 py-2 rounded-lg text-sm text-red-300 hover:bg-slate-700">No Show No Call</a>
+        </div>
+      </div>
+
+      <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Leave Request</a>
+     
+      <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Attendance</a>
+      <a href="login.html" class="block px-4 py-2 rounded-lg bg-indigo-600 font-semibold">Tap Login</a>
+    </nav>
+
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p class="font-semibold">Admin</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="ml-64 p-8 w-full">
+
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">Employee Attendance Scanner</h1>
+      <span class="text-sm text-gray-500">Attendance System</span>
+    </div>
+
+    <!-- ATTENDANCE SCANNER SECTION -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- SCANNER PANEL -->
+      <div class="bg-white rounded-xl shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">Barcode Scanner</h2>
+
+        <!-- CAMERA SCREEN -->
+        <div
+          class="relative w-full h-72 border-2 border-dashed rounded-lg flex items-center justify-center bg-gray-50 mb-4"
+        >
+          <div id="scanner" class="w-full h-full"></div>
+
+          <!-- Placeholder text -->
+          <div id="scannerPlaceholder" class="absolute text-gray-400 text-sm">
+            Camera preview will appear here
+          </div>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="flex gap-3">
+          <button
+            onclick="startScanner()"
+            class="px-4 py-2 bg-indigo-600 text-white rounded text-sm">
+            Start Camera
+          </button>
+
+          <button
+            onclick="stopScanner()"
+            class="px-4 py-2 bg-gray-300 text-gray-700 rounded text-sm">
+            Stop Camera
+          </button>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE TABLE -->
+      <div class="bg-white rounded-xl shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">Attendance Records</h2>
+
+        <div class="overflow-x-auto">
+          <table id="attendanceTable" class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-2 text-left font-medium">Full Name</th>
+                <th class="px-4 py-2 text-left font-medium">Date</th>
+                <th class="px-4 py-2 text-left font-medium">Time In</th>
+                <th class="px-4 py-2 text-left font-medium">Time Out</th>
+                <th class="px-4 py-2 text-left font-medium">Worked Hours</th>
+                <th class="px-4 py-2 text-left font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- DATA WILL BE INSERTED HERE -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const scanList = document.getElementById("scanList");
+  const placeholder = document.getElementById("scannerPlaceholder");
+
+  let html5QrCode = null;
+  let lastScan = "";
+  let lastScanTime = 0;
+
+  async function loadScans() {
+    try {
+      const tableBody = document.querySelector('#attendanceTable tbody');
+      tableBody.innerHTML = "";
+
+      const response = await fetch('/api/attendance');
+      const attendanceRecords = await response.json();
+
+      // Show recent records (last 20)
+      attendanceRecords.slice(0, 20).forEach(record => {
+        const row = document.createElement("tr");
+        row.className = "border-b hover:bg-gray-50";
+
+        const timeOut = record.time_out || '-';
+        const workedHours = record.worked_hours || '-';
+
+        row.innerHTML = `
+          <td class="px-4 py-2">${record.name}</td>
+          <td class="px-4 py-2">${record.date}</td>
+          <td class="px-4 py-2">${record.time_in}</td>
+          <td class="px-4 py-2">${timeOut}</td>
+          <td class="px-4 py-2">${formatWorkedHours(workedHours)}</td>
+          <td class="px-4 py-2">
+            <button onclick="deleteAttendance(${record.id})" class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600">
+              Delete
+            </button>
+          </td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+
+      if (attendanceRecords.length === 0) {
+        const emptyRow = document.createElement("tr");
+        emptyRow.innerHTML = '<td colspan="6" class="px-4 py-8 text-center text-gray-500">No attendance records found</td>';
+        tableBody.appendChild(emptyRow);
+      }
+    } catch (error) {
+      console.error('Error loading attendance:', error);
+      const tableBody = document.querySelector('#attendanceTable tbody');
+      tableBody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">Error loading attendance data</td></tr>';
+    }
+  }
+
+  async function saveScan(code) {
+    try {
+      const response = await fetch('/api/tap-logs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ barcode: code })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const action = data.attendance_action ? ` (${data.attendance_action.replace('_', ' ')})` : '';
+        showNotification(`Tap logged successfully${action}`, 'success');
+        loadScans();
+      } else {
+        showNotification('Error recording scan', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving scan:', error);
+      showNotification('Error recording scan', 'error');
+    }
+  }
+
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 ${
+      type === 'success' ? 'bg-green-500' :
+      type === 'warning' ? 'bg-yellow-500' :
+      type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+  }
+
+  function onScanSuccess(decodedText) {
+    const now = Date.now();
+
+    if (decodedText === lastScan && now - lastScanTime < 3000) return;
+
+    lastScan = decodedText;
+    lastScanTime = now;
+
+    saveScan(decodedText);
+  }
+
+  function startScanner() {
+    if (html5QrCode) return;
+
+    placeholder.style.display = "none";
+    html5QrCode = new Html5Qrcode("scanner");
+
+    Html5Qrcode.getCameras().then(cameras => {
+      if (!cameras.length) {
+        alert("No camera found");
+        return;
+      }
+
+      html5QrCode.start(
+        cameras[0].id,
+        { fps: 10, qrbox: 350 },
+        onScanSuccess
+      );
+    });
+  }
+
+  function stopScanner() {
+    if (!html5QrCode) return;
+
+    html5QrCode.stop().then(() => {
+      html5QrCode.clear();
+      html5QrCode = null;
+      placeholder.style.display = "block";
+    });
+  }
+
+  loadScans();
+
+  async function manualCheckOut(attendanceId) {
+    if (!confirm('Are you sure you want to check out this employee?')) return;
+
+    try {
+      const now = new Date().toTimeString().split(' ')[0];
+      const response = await fetch(`/api/attendance/${attendanceId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ time_out: now, worked_hours: 0 }) // worked_hours will be calculated in backend
+      });
+
+      if (response.ok) {
+        showNotification('Employee checked out successfully', 'success');
+        loadScans();
+      } else {
+        showNotification('Error checking out employee', 'error');
+      }
+    } catch (error) {
+      console.error('Error checking out employee:', error);
+      showNotification('Error checking out employee', 'error');
+    }
+  }
+
+  async function deleteAttendance(id) {
+    if (!confirm('Are you sure you want to delete this attendance record?')) return;
+
+    console.log('Attempting to delete attendance record with ID:', id);
+
+    try {
+      const response = await fetch(`/api/attendance/${id}`, {
+        method: 'DELETE'
+      });
+
+      console.log('Delete response status:', response.status);
+      const responseData = await response.json();
+      console.log('Delete response data:', responseData);
+
+      if (response.ok) {
+        showNotification('Attendance record deleted successfully', 'success');
+        loadScans();
+      } else {
+        showNotification(`Error deleting attendance record: ${responseData.error || 'Unknown error'}`, 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting attendance record:', error);
+      showNotification('Error deleting attendance record', 'error');
+    }
+  }
+
+  async function deleteTapLog(id) {
+    if (!confirm('Are you sure you want to delete this tap log?')) return;
+
+    try {
+      const response = await fetch(`/api/tap-logs/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        showNotification('Tap log deleted successfully', 'success');
+        loadScans();
+      } else {
+        showNotification('Error deleting tap log', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting tap log:', error);
+      showNotification('Error deleting tap log', 'error');
+    }
+  }
+
+  function toggleEmployeeMenu() {
+    document.getElementById("employeeMenu").classList.toggle("hidden");
+    document.getElementById("employeeArrow").classList.toggle("rotate-180");
+  }
+
+  function formatWorkedHours(decimalHours) {
+    if (!decimalHours || decimalHours === '-') return '-';
+    const hours = Math.floor(decimalHours);
+    const minutes = Math.round((decimalHours - hours) * 60);
+    return `${hours}h ${minutes}m`;
+  }
+
+  // Logout functionality
+  document.querySelector('.text-red-400').addEventListener('click', () => {
+    window.location.href = 'auth-login.html';
+  });
+
+</script>
+
+</body>
+</html>

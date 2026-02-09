@@ -1,0 +1,47 @@
+PAGES TO UPDATE WITH API INTEGRATION:
+
+✅ DONE:
+- employee.html ✓ (loads from /api/employees)
+- attendance.html ✓ (added api-config.js)
+- add-employee.html ✓ (already working)
+
+⏳ STILL NEED UPDATE (script sections only):
+
+1. leave.html
+   - Load from: await leaveAPI.getAll()
+   - Display: start_date, end_date, leave_type, reason, status
+
+2. login.html  
+   - Load from: await tapLogAPI.getAll()
+   - Display: barcode, name, timestamp
+
+3. manage-employee.html
+   - Load from: await employeeAPI.getAll()
+   - Add delete button functionality
+   - Display: barcode, name, position, department, actions
+
+4. no-show.html
+   - Filter employees with no recent tap_logs
+   - Load from: await employeeAPI.getAll() + tap_logs
+
+5. schedule.html
+   - Load from: await scheduleAPI.getAll()
+   - Display: title, description, event_date
+
+6. id.html
+   - Load from: await employeeAPI.getAll()
+   - Generate barcodes from barcode field
+
+7. Dashboard.html
+   - Load stats from API
+   - Load announcements from: await announcementAPI.getAll()
+
+TO COMPLETE THESE FAST:
+1. I can provide the JavaScript code for each page
+2. You copy-paste into the corresponding page's <script> section
+3. Replace the static data with API calls
+
+Would you like me to:
+A) Provide all the code ready to copy-paste
+B) Do them one by one
+C) Automatically update all remaining pages

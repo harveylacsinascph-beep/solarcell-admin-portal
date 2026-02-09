@@ -1,0 +1,79 @@
+<aside class="w-64 bg-white shadow-md min-h-screen">
+  
+  <!-- Logo -->
+  <div class="flex justify-center py-6">
+    <img src="../Photos/solar.png" class="h-16 object-contain" />
+  </div>
+
+  <!-- Navigation -->
+  <nav class="px-4 space-y-1">
+
+    <a href="dashboard.html" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-100 font-medium">
+      <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="2"
+        viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M3 12l2-2m0 0l7-7 7 7" />
+      </svg>
+      Dashboard
+    </a>
+
+    <a href="employee.html" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-100">
+      <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="2"
+        viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M15 11a3 3 0 11-6 0" />
+      </svg>
+      Employee
+    </a>
+
+    <a href="leave.html" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-100">
+      <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="2"
+        viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M9 12h6" />
+      </svg>
+      Leave Request
+    </a>
+
+    <a href="id.html" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-100">
+      Employee ID
+    </a>
+
+    <a href="schedule.html" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-100">
+      Schedule
+    </a>
+
+    <a href="attendance.html" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-100">
+      Attendance
+    </a>
+
+    <a href="login.html" class="sidebar-link flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-100 text-red-600">
+      Tap Login
+    </a>
+
+  </nav>
+
+  <!-- Logged in user -->
+  <div class="px-4 py-4 border-t border-gray-200 mt-4">
+    <div id="loggedInUser" class="text-sm text-gray-600">
+      <!-- User name will be inserted here -->
+    </div>
+  </div>
+</aside>
+
+<script>
+  // Check if logged in
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!user) {
+    window.location.href = 'auth-login.html';
+    return;
+  }
+
+  // Display logged in user name
+  const loggedInUserDiv = document.getElementById('loggedInUser');
+  if (user.employee_name) {
+    loggedInUserDiv.textContent = `Logged in as ${user.employee_name}`;
+  } else if (user.username) {
+    loggedInUserDiv.textContent = `Logged in as ${user.username}`;
+  }
+</script>

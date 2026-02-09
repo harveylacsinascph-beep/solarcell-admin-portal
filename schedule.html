@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Schedule</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <!-- API Config -->
+  <script src="api-config.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col fixed left-0 top-0 h-screen z-40">
+
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Admin Portal</p>
+    </div>
+
+    <!-- NAVIGATION -->
+<nav class="flex-1 px-4 mt-4 space-y-1">
+
+  <!-- DASHBOARD -->
+  <a href="dashboard.html"
+     class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+    Dashboard
+  </a>
+
+  <!-- EMPLOYEE DROPDOWN -->
+  <div>
+    <button
+      onclick="toggleEmployeeMenu()"
+      class="w-full flex justify-between items-center px-4 py-2 rounded-lg hover:bg-slate-700 focus:outline-none">
+      <span>Employee</span>
+      <svg id="employeeArrow" class="w-4 h-4 transition-transform"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+
+    <!-- SUB MENU -->
+    <div id="employeeMenu" class="ml-4 mt-1 space-y-1 hidden">
+
+      <a href="employee.html"
+         class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+        Employee List
+      </a>
+
+      <a href="add-employee.html"
+         class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+        Add Employee
+      </a>
+
+      <a href="manage-employee.html"
+         class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+        Manage Employee
+      </a>
+
+      <a href="no-show.html"
+         class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700 text-red-300 hover:text-red-200">
+        No Show No Call
+      </a>
+
+    </div>
+  </div>
+
+  <!-- OTHER LINKS -->
+  <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+    Leave Request
+  </a>
+
+ 
+
+  <a href="schedule.html" class="block px-4 py-2 rounded-lg bg-indigo-600 font-semibold">
+    Schedule
+  </a>
+
+  <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+    Attendance
+  </a>
+
+  <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+    Tap Login
+  </a>
+
+</nav>
+
+
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p class="font-semibold">Admin</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="ml-64 p-8 w-full">
+
+    <!-- PAGE HEADER -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">Schedule</h1>
+      <p class="text-sm text-gray-500">
+        Click a date to add pins. Click a pin to view or delete.
+      </p>
+    </div>
+
+    <!-- CALENDAR -->
+    <section class="bg-white rounded-xl shadow p-6">
+      <div id="calendar"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ADD EVENT MODAL -->
+<div id="eventModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-6 w-96 space-y-4">
+    <h2 class="text-lg font-semibold">Add Schedule Note</h2>
+
+    <input
+      id="eventTitle"
+      type="text"
+      placeholder="Title"
+      class="w-full border rounded px-3 py-2 text-sm"
+    />
+
+    <textarea
+      id="eventDesc"
+      placeholder="Description"
+      class="w-full border rounded px-3 py-2 text-sm"
+      rows="3"></textarea>
+
+    <div class="flex justify-end gap-2">
+      <button onclick="closeAddModal()" class="px-4 py-2 border rounded text-sm">Cancel</button>
+      <button onclick="saveEvent()" class="px-4 py-2 bg-indigo-600 text-white rounded text-sm">
+        Save
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW EVENT MODAL -->
+<div id="viewModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-6 w-96 space-y-4">
+
+    <h2 id="viewTitle" class="text-xl font-semibold"></h2>
+    <p id="viewDate" class="text-sm text-gray-500"></p>
+    <p id="viewDesc" class="text-sm text-gray-700"></p>
+
+    <div class="flex justify-between pt-4">
+      <button
+        onclick="deleteCurrentEvent()"
+        class="px-4 py-2 bg-red-600 text-white rounded text-sm">
+        Delete
+      </button>
+
+      <button
+        onclick="closeViewModal()"
+        class="px-4 py-2 border rounded text-sm">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let calendar;
+  let selectedDate = null;
+  let activeEvent = null;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next',
+        center: 'title',
+        right: ''
+      },
+      dateClick(info) {
+        selectedDate = info.dateStr;
+        openAddModal();
+      },
+      eventClick(info) {
+        activeEvent = info.event;
+        openViewModal(info.event);
+      },
+      events: loadEvents()
+    });
+
+    calendar.render();
+  });
+
+  function openAddModal() {
+    eventModal.classList.remove('hidden');
+    eventModal.classList.add('flex');
+  }
+
+  function closeAddModal() {
+    eventModal.classList.add('hidden');
+    eventModal.classList.remove('flex');
+    eventTitle.value = '';
+    eventDesc.value = '';
+  }
+
+  function openViewModal(event) {
+    viewTitle.textContent = event.title;
+    viewDesc.textContent = event.extendedProps.description || 'No description';
+    viewDate.textContent = event.start.toDateString();
+
+    viewModal.classList.remove('hidden');
+    viewModal.classList.add('flex');
+  }
+
+  function closeViewModal() {
+    viewModal.classList.add('hidden');
+    viewModal.classList.remove('flex');
+    activeEvent = null;
+  }
+
+  function saveEvent() {
+    if (!eventTitle.value) return alert('Title required');
+
+    calendar.addEvent({
+      id: Date.now().toString(),
+      title: eventTitle.value,
+      start: selectedDate,
+      extendedProps: { description: eventDesc.value }
+    });
+
+    saveAllEvents();
+    closeAddModal();
+  }
+
+  function deleteCurrentEvent() {
+    if (!activeEvent) return;
+
+    activeEvent.remove();
+    saveAllEvents();
+    closeViewModal();
+  }
+
+  async function saveAllEvents() {
+    const events = calendar.getEvents();
+    for (const event of events) {
+      await scheduleAPI.create({
+        title: event.title,
+        date: event.startStr,
+        description: event.extendedProps?.description || ''
+      });
+    }
+  }
+
+  async function loadEvents() {
+    try {
+      const events = await scheduleAPI.getAll();
+      return events.map(e => ({
+        id: e.id,
+        title: e.title,
+        start: e.date,
+        extendedProps: { description: e.description }
+      }));
+    } catch (error) {
+      console.error('Error loading schedule:', error);
+      return [];
+    }
+  }
+</script>
+
+<script>
+  function toggleEmployeeMenu() {
+    const menu = document.getElementById("employeeMenu");
+    const arrow = document.getElementById("employeeArrow");
+
+    menu.classList.toggle("hidden");
+    arrow.classList.toggle("rotate-180");
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Employee</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="api-config.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col fixed left-0 top-0 h-screen z-40">
+
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Admin Portal</p>
+    </div>
+
+    <nav class="flex-1 px-4 mt-4 space-y-1">
+
+      <a href="dashboard.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">
+        Dashboard
+      </a>
+
+      <!-- EMPLOYEE -->
+      <div>
+        <button onclick="toggleEmployeeMenu()"
+          class="w-full flex justify-between items-center px-4 py-2 rounded-lg hover:bg-slate-700">
+          <span>Employee</span>
+          <svg id="employeeArrow"
+               class="w-4 h-4 rotate-180 transition-transform"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div id="employeeMenu" class="ml-4 mt-1 space-y-1">
+
+          <a href="employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Employee List
+          </a>
+
+          <a href="add-employee.html" class="block px-4 py-2 rounded-lg text-sm hover:bg-slate-700">
+            Add Employee
+          </a>
+
+          <a href="manage-employee.html"
+             class="block px-4 py-2 rounded-lg text-sm bg-indigo-600 font-semibold">
+            Manage Employee
+          </a>
+
+          <a href="no-show.html"
+             class="block px-4 py-2 rounded-lg text-sm text-red-300 hover:bg-slate-700">
+            No Show No Call
+          </a>
+
+        </div>
+      </div>
+
+      <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Leave Request</a>
+    
+    
+      <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Attendance</a>
+      <a href="login.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Tap Login</a>
+
+    </nav>
+
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p class="font-semibold">Admin</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="ml-64 p-8 w-full">
+
+    <h1 class="text-3xl font-bold mb-6">Manage Employee</h1>
+
+    <!-- CONTROLS -->
+<div class="flex justify-between items-center mb-4">
+
+  <div class="flex gap-2 items-center">
+  
+  </div>
+
+  <div class="flex gap-2">
+    <select id="departmentFilter" onchange="filterTable()"
+      class="border rounded px-2 py-1 text-sm">
+      <option value="">All Departments</option>
+      <option value="marketing">Marketing</option>
+      <option value="installer">Installer</option>
+      <option value="sales">Sales</option>
+      <option value="finance">Finance</option>
+      <option value="hr">Human Resources</option>
+      <option value="engineering">Engineering</option>
+
+    </select>
+
+    <input id="searchInput" onkeyup="filterTable()" type="text"
+      placeholder="Search..."
+      class="border rounded px-3 py-1 text-sm" />
+  </div>
+</div>
+
+
+    <!-- TABLE -->
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="p-3 text-left">Barcode ID</th>
+            <th class="p-3 text-left">Name</th>
+            <th class="p-3 text-left">Employed Date</th>
+            <th class="p-3 text-left">Department</th>
+            <th class="p-3 text-left">Position</th>
+            <th class="p-3 text-left">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody id="employeeTable">
+          <!-- LOADED DYNAMICALLY FROM API -->
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-sm text-gray-500 mt-4">Showing filtered results</p>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+  <div class="bg-white w-full max-w-2xl rounded-xl p-6">
+
+    <h2 class="text-xl font-bold mb-4">Manage Employee</h2>
+
+    <!-- FORM -->
+    <div class="grid grid-cols-2 gap-4 text-sm">
+
+      <!-- BARCODE CARD -->
+      <div class="col-span-2 mb-4">
+        <div class="bg-gray-50 border rounded-xl px-6 py-4 text-center shadow-sm">
+          <p class="text-xs text-gray-500 mb-2">Employee Barcode</p>
+          <svg id="employeeBarcode" class="mx-auto"></svg>
+          <p class="text-xs text-gray-600 mt-2 font-mono">SCPH20231220AS</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-gray-600">Barcode ID</label>
+        <input id="barcodeInput"
+          value="SCPH20231220AS"
+          class="w-full border rounded px-2 py-1 bg-gray-100" disabled>
+      </div>
+
+      <div>
+        <label class="text-gray-600">Full Name</label>
+        <input value="Alexa Paulin Santos" class="w-full border rounded px-2 py-1">
+      </div>
+
+      <div>
+        <label class="text-gray-600">Phone Number</label>
+        <input value="09369637006" class="w-full border rounded px-2 py-1">
+      </div>
+
+      <div>
+        <label class="text-gray-600">Address</label>
+        <input value="Agnaya, Plaridel, Bulacan" class="w-full border rounded px-2 py-1">
+      </div>
+
+      <div>
+        <label class="text-gray-600">Birthdate</label>
+        <input type="date" value="2001-01-26" class="w-full border rounded px-2 py-1">
+      </div>
+
+      <div>
+        <label class="text-gray-600">Employed Date</label>
+        <input type="date" value="2023-12-20" class="w-full border rounded px-2 py-1">
+      </div>
+
+      <div>
+        <label class="text-gray-600">Department</label>
+        <select class="w-full border rounded px-2 py-1">
+          <option>Marketing</option>
+          <option>Sales</option>
+          <option>Engineering</option>
+          <option>Finance</option>
+          <option>Human Resources</option>
+          <option>Installer</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="text-gray-600">Role Type</label>
+        <select class="w-full border rounded px-2 py-1">
+          <option>Marketing</option>
+          <option>Sales</option>
+          <option>Engineering</option>
+          <option>Finance</option>
+          <option>Human Resources</option>
+          <option>Installer</option>
+          <option>IT Support</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="text-gray-600">Vacation Leave</label>
+        <input id="vacationLeaveInput" type="number" min="0" max="30" class="w-full border rounded px-2 py-1 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" autofocus>
+      </div>
+
+      <div>
+        <label class="text-gray-600">Sick Leave</label>
+        <input id="sickLeaveInput" type="number" min="0" max="30" class="w-full border rounded px-2 py-1 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+      </div>
+
+      <div>
+        <label class="text-gray-600">Status</label>
+        <select class="w-full border rounded px-2 py-1">
+          <option>Active</option>
+          <option>Resigned</option>
+          <option>Inactive</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="text-gray-600">Contact Person Name</label>
+        <input id="emergencyContactName" class="w-full border rounded px-2 py-1">
+      </div>
+
+      <div>
+        <label class="text-gray-600">Contact Person Phone</label>
+        <input id="emergencyContactPhone" class="w-full border rounded px-2 py-1">
+      </div>
+
+    </div>
+
+    <div class="flex justify-end gap-2 mt-6">
+      <button onclick="closeModal()" class="px-4 py-2 border rounded">Cancel</button>
+      <button onclick="saveEmployeeChanges()" class="px-4 py-2 bg-indigo-600 text-white rounded">Save Changes</button>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+  let employees = [];
+  let selectedEmployeeId = null;
+
+  async function loadEmployees() {
+    try {
+      employees = await employeeAPI.getAll();
+      renderTable();
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('employeeTable');
+    tbody.innerHTML = '';
+
+    employees.forEach(emp => {
+      const row = document.createElement('tr');
+      row.className = 'border-t';
+      row.dataset.department = (emp.department || '').toLowerCase();
+      row.innerHTML = `
+        <td class="p-3">${emp.barcode || 'N/A'}</td>
+        <td class="p-3">${emp.name || 'N/A'}</td>
+        <td class="p-3">${emp.employed_date || 'N/A'}</td>
+        <td class="p-3">${emp.department || 'N/A'}</td>
+        <td class="p-3">${emp.position || 'N/A'}</td>
+        <td class="p-3 space-x-2 flex">
+          <button onclick="openModal(${emp.id})" class="px-3 py-1 bg-indigo-600 text-white rounded text-xs">
+            Manage
+          </button>
+          <button onclick="deleteEmployee(${emp.id})" class="px-3 py-1 bg-red-600 text-white rounded text-xs">
+            Delete
+          </button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    // Render mini barcodes
+    setTimeout(() => {
+      JsBarcode('.barcode-mini', {
+        format: 'CODE128',
+        width: 1,
+        height: 20,
+        margin: 0,
+        displayValue: false
+      });
+    }, 100);
+  }
+
+  function openModal(employeeId) {
+    selectedEmployeeId = employeeId;
+    const emp = employees.find(e => e.id === employeeId);
+    if (!emp) return;
+
+    console.log('Opening modal for employee:', emp);
+    console.log('Employee vacation_leave:', emp.vacation_leave);
+    console.log('Employee sick_leave:', emp.sick_leave);
+
+    const modal = document.getElementById('modal');
+    modal.classList.remove('hidden');
+
+    // Populate form with employee data - use proper selectors
+    document.getElementById('barcodeInput').value = emp.barcode || '';
+
+    // Find form inputs by their position in the form
+    const inputs = modal.querySelectorAll('input:not([type="date"]):not([id="barcodeInput"]):not([id="vacationLeaveInput"]):not([id="sickLeaveInput"]), input[type="date"]');
+    const selects = modal.querySelectorAll('select');
+
+    // Full Name
+    if (inputs[0]) inputs[0].value = emp.name || '';
+    // Phone Number
+    if (inputs[1]) inputs[1].value = emp.phone || '';
+    // Address
+    if (inputs[2]) inputs[2].value = emp.address || '';
+    // Birthdate
+    if (inputs[3]) inputs[3].value = emp.birthdate || '';
+    // Employed Date
+    if (inputs[4]) inputs[4].value = emp.employed_date || '';
+    // Vacation Leave - use specific ID for reliability
+    const vacationInput = document.getElementById('vacationLeaveInput');
+    const sickInput = document.getElementById('sickLeaveInput');
+    console.log('Vacation input element:', vacationInput);
+    console.log('Sick input element:', sickInput);
+
+    if (vacationInput) {
+      vacationInput.value = emp.vacation_leave || '0';
+      console.log('Set vacation input value to:', vacationInput.value);
+    }
+    if (sickInput) {
+      sickInput.value = emp.sick_leave || '0';
+      console.log('Set sick input value to:', sickInput.value);
+    }
+
+    // Department
+    if (selects[0]) selects[0].value = emp.department || '';
+    // Role Type
+    if (selects[1]) selects[1].value = emp.position || '';
+    // Status
+    if (selects[2]) selects[2].value = emp.status || 'Active';
+
+    // Emergency Contact Name
+    document.getElementById('emergencyContactName').value = emp.emergency_contact_name || '';
+    // Emergency Contact Phone
+    document.getElementById('emergencyContactPhone').value = emp.emergency_contact_phone || '';
+
+    // Update barcode display text
+    const barcodeText = modal.querySelector('#employeeBarcode').nextElementSibling;
+    if (barcodeText) {
+      barcodeText.textContent = emp.barcode || 'N/A';
+    }
+
+    // Render barcode - wait for modal to be fully visible
+    if (emp.barcode) {
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          try {
+            JsBarcode('#employeeBarcode', emp.barcode, {
+              format: 'CODE128',
+              width: 2,
+              height: 60,
+              displayValue: false
+            });
+          } catch (error) {
+            console.error('Error rendering barcode:', error);
+          }
+        }, 150);
+      });
+    }
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.add('hidden');
+    selectedEmployeeId = null;
+  }
+
+  async function deleteEmployee(employeeId) {
+    if (!confirm('Are you sure you want to delete this employee?')) return;
+    
+    try {
+      await employeeAPI.delete(employeeId);
+      alert('Employee deleted successfully');
+      loadEmployees();
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      alert('Failed to delete employee');
+    }
+  }
+
+  function filterTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const department = document.getElementById('departmentFilter').value;
+
+    const rows = document.querySelectorAll('#employeeTable tr');
+
+    rows.forEach(row => {
+      const textMatch = row.innerText.toLowerCase().includes(search);
+      const deptMatch = !department || row.dataset.department === department;
+
+      row.style.display = (textMatch && deptMatch) ? '' : 'none';
+    });
+  }
+
+  async function saveEmployeeChanges() {
+    if (!selectedEmployeeId) return;
+
+    // Collect form data - match backend expected fields
+    const modal = document.getElementById('modal');
+    const inputs = modal.querySelectorAll('input:not([type="date"]):not([id="barcodeInput"]), input[type="date"]');
+    const selects = modal.querySelectorAll('select');
+
+    // Debug: Log the values being collected
+    const vacationLeaveValue = document.getElementById('vacationLeaveInput').value;
+    const sickLeaveValue = document.getElementById('sickLeaveInput').value;
+    console.log('Vacation Leave Input Value:', vacationLeaveValue);
+    console.log('Sick Leave Input Value:', sickLeaveValue);
+
+    const vacationLeave = parseInt(vacationLeaveValue);
+    const sickLeave = parseInt(sickLeaveValue);
+
+    const updatedEmployee = {
+      barcode: document.getElementById('barcodeInput').value || '',
+      name: inputs[0]?.value || '',
+      phone: inputs[1]?.value || '',
+      address: inputs[2]?.value || '',
+      birthdate: inputs[3]?.value || '',
+      employed_date: inputs[4]?.value || '',
+      department: selects[0]?.value || '',
+      position: selects[1]?.value || '',
+      vacation_leave: isNaN(vacationLeave) ? 0 : vacationLeave,
+      sick_leave: isNaN(sickLeave) ? 0 : sickLeave,
+      status: selects[2]?.value || 'Active',
+      emergency_contact_name: document.getElementById('emergencyContactName').value || '',
+      emergency_contact_phone: document.getElementById('emergencyContactPhone').value || ''
+    };
+
+    console.log('Updated Employee Data:', updatedEmployee);
+
+    try {
+      await employeeAPI.update(selectedEmployeeId, updatedEmployee);
+      alert('Employee updated successfully');
+      closeModal();
+      loadEmployees();
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      alert('Failed to update employee');
+    }
+  }
+
+  function toggleEmployeeMenu() {
+    document.getElementById('employeeMenu').classList.toggle('hidden');
+    document.getElementById('employeeArrow').classList.toggle('rotate-180');
+  }
+
+  // Logout functionality
+  document.querySelector('.text-red-400').addEventListener('click', () => {
+    window.location.href = 'auth-login.html';
+  });
+
+  loadEmployees();
+</script>
+
+
+</body>
+</html>

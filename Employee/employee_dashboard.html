@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="../api-config.js"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen font-sans">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white fixed left-0 top-0 h-screen z-40 flex flex-col">
+    <div class="p-6 border-b border-slate-700">
+      <h1 class="text-xl font-bold">SolarCell PH</h1>
+      <p class="text-sm text-slate-400">Employee Portal</p>
+    </div>
+
+    <nav class="flex-1 px-4 mt-4 space-y-1">
+      <a href="employee_dashboard.html" class="block px-4 py-2 rounded-lg bg-indigo-600 font-semibold">Dashboard</a>
+      <a href="leave.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Leave Request</a>
+      <a href="attendance.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Attendance</a>
+      <a href="semaphore.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Semaphore</a>
+      <a href="profile.html" class="block px-4 py-2 rounded-lg hover:bg-slate-700">Profile</a>
+    </nav>
+
+    <div class="p-4 border-t border-slate-700">
+      <p class="text-sm text-slate-400">Logged in as</p>
+      <p id="employeeName" class="font-semibold">Employee</p>
+      <button class="mt-4 text-red-400 hover:text-red-500">Logout</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="ml-64 w-full p-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+      <p class="text-sm text-gray-500">Welcome back! Here’s your quick overview.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Employee ID Card -->
+      <section class="bg-white rounded-xl shadow p-6">
+        <div class="flex justify-between items-start">
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Employee ID Card</h2>
+            <p class="text-sm text-gray-500">Quick preview for attendance scanning</p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-col gap-4">
+          <div class="flex items-center gap-4">
+            <div id="employeeInitials" class="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-600">
+              --
+            </div>
+            <div>
+              <p id="employeeNameCard" class="font-semibold text-gray-800">Loading...</p>
+              <p id="employeePosition" class="text-sm text-gray-500">Loading...</p>
+              <p class="text-xs text-gray-400 mt-1">
+                Barcode ID: <span id="employeeBarcode" class="font-medium text-gray-700">--</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex justify-center mt-12">
+            <img id="barcodeImage"
+              src=""
+              alt="Barcode"
+              class="w-96 h-auto"
+            />
+          </div>
+
+          <p class="text-xs text-gray-500 text-center">
+            Use this barcode for attendance tap-in / tap-out.
+          </p>
+        </div>
+      </section>
+
+      <!-- Announcements -->
+      <section class="bg-white rounded-xl shadow p-6">
+        <div class="flex justify-between items-start">
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Announcements</h2>
+            <p class="text-sm text-gray-500">Latest company updates</p>
+          </div>
+          <span class="text-xs text-gray-400">3 New</span>
+        </div>
+
+        <div id="announcementsList" class="mt-6 space-y-3 max-h-96 overflow-y-auto">
+          <!-- Announcements will be loaded dynamically -->
+        </div>
+      </section>
+    </div>
+
+    <!-- Calendar -->
+    <div class="bg-white rounded-xl shadow p-6 mt-6">
+      <h2 class="text-xl font-semibold mb-4">Company Calendar</h2>
+      <div id="calendar"></div>
+    </div>
+
+    <!-- MODAL FOR EVENT ACTIONS -->
+    <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+      <div class="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+        <h3 id="modalTitle" class="text-lg font-semibold mb-4">Event Details</h3>
+        <div class="space-y-4">
+          <input type="text" id="eventTitle" placeholder="Event Title" class="w-full p-3 border rounded-lg" readonly>
+          <textarea id="eventDescription" placeholder="Event Description" rows="3" class="w-full p-3 border rounded-lg" readonly></textarea>
+          <input type="date" id="eventDate" class="w-full p-3 border rounded-lg" readonly>
+        </div>
+        <div class="flex justify-end space-x-2 mt-6">
+          <button id="cancelBtn" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Close</button>
+          <button id="deleteBtn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 hidden">Delete</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Display logged in user name
+  const user = JSON.parse(localStorage.getItem('user'));
+  const employeeNameDiv = document.getElementById('employeeName');
+  if (user && user.employee_name) {
+    employeeNameDiv.textContent = user.employee_name;
+  }
+
+  // Load employee data for ID card
+  async function loadEmployeeData() {
+    try {
+      if (!user || !user.employee_id) {
+        console.error('No logged-in user found');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:3001/api/employees/${user.employee_id}`);
+      if (!response.ok) {
+        throw new Error('Failed to load employee data');
+      }
+
+      const employee = await response.json();
+
+      // Update employee ID card
+      document.getElementById('employeeNameCard').textContent = employee.name;
+      document.getElementById('employeePosition').textContent = employee.position || 'Employee';
+      document.getElementById('employeeBarcode').textContent = employee.barcode;
+
+      // Update initials
+      const initials = employee.name.split(' ').map(n => n[0]).join('').toUpperCase();
+      document.getElementById('employeeInitials').textContent = initials;
+
+      // Update barcode image
+      const barcodeImg = document.getElementById('barcodeImage');
+      barcodeImg.src = `https://barcode.tec-it.com/barcode.ashx?data=${employee.barcode}&code=Code128&dpi=96`;
+
+    } catch (error) {
+      console.error('Error loading employee data:', error);
+      // Fallback to showing error state
+      document.getElementById('employeeNameCard').textContent = 'Error loading data';
+      document.getElementById('employeePosition').textContent = 'Please try again';
+    }
+  }
+
+  // Logout functionality
+  document.querySelector('button').addEventListener('click', () => {
+    window.location.href = '../auth-login.html';
+  });
+
+  // Load employee data on page load
+  loadEmployeeData();
+  loadAnnouncements();
+
+  async function loadAnnouncements() {
+    try {
+      const announcements = await announcementAPI.getAll();
+      const container = document.getElementById('announcementsList');
+
+      if (announcements.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm">No announcements yet.</p>';
+        return;
+      }
+
+      container.innerHTML = announcements.map(announcement => {
+        const date = new Date(announcement.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+
+        return `
+          <div class="border border-gray-200 rounded-xl p-4">
+            <p class="font-semibold text-gray-800">📢 ${announcement.title}</p>
+            <p class="text-sm text-gray-500 mt-1">${announcement.content}</p>
+            <p class="text-xs text-gray-400 mt-2">${date}</p>
+          </div>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.error("Failed to load announcements:", err);
+      document.getElementById('announcementsList').innerHTML =
+        '<p class="text-red-500 text-sm">Failed to load announcements.</p>';
+    }
+  }
+
+  // Initialize calendar
+  let calendar;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const calendarEl = document.getElementById("calendar");
+
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: "dayGridMonth",
+      height: "auto",
+      headerToolbar: {
+        left: "prev,next",
+        center: "title",
+        right: ""
+      },
+
+      // ✅ LOAD EVENTS FROM BACKEND
+      events: async (info, successCallback, failureCallback) => {
+        try {
+          const events = await scheduleAPI.getAll();
+          successCallback(events.map(e => ({
+            id: e.id,
+            title: e.title,
+            start: e.event_date,
+            extendedProps: {
+              description: e.description
+            }
+          })));
+        } catch (err) {
+          console.error("Calendar load failed", err);
+          // Fallback: show sample events if API fails
+          successCallback([
+            { id: 1, title: 'Sample Event 1', start: '2023-10-01' },
+            { id: 2, title: 'Sample Event 2', start: '2023-10-15' }
+          ]);
+        }
+      },
+
+      // ✅ CLICK EVENT → SHOW MODAL
+      eventClick: (info) => {
+        showEventModal(info.event);
+      }
+    });
+
+    calendar.render();
+
+    // Real-time sync: refetch events every 1 second
+    setInterval(() => {
+      calendar.refetchEvents();
+    }, 1000);
+
+    // Real-time sync: refresh announcements every 1 second
+    setInterval(() => {
+      loadAnnouncements();
+    }, 1000);
+
+    // Modal event listeners
+    document.getElementById('cancelBtn').addEventListener('click', hideEventModal);
+  });
+
+  function showEventModal(event) {
+    const modal = document.getElementById('eventModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const titleInput = document.getElementById('eventTitle');
+    const descInput = document.getElementById('eventDescription');
+    const dateInput = document.getElementById('eventDate');
+
+    modalTitle.textContent = 'Event Details';
+    titleInput.value = event.title;
+    descInput.value = event.extendedProps?.description || '';
+    dateInput.value = event.startStr;
+
+    modal.classList.remove('hidden');
+  }
+
+  function hideEventModal() {
+    document.getElementById('eventModal').classList.add('hidden');
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Employee Dashboard</title>
+</head>
+<body>
+  <h1>Debug Employee Dashboard</h1>
+  <div id="output"></div>
+
+  <script>
+    const output = document.getElementById('output');
+
+    function log(message) {
+      output.innerHTML += '<p>' + message + '</p>';
+      console.log(message);
+    }
+
+    // Check localStorage
+    log('Checking localStorage...');
+    const userData = localStorage.getItem('user');
+    log('localStorage user data: ' + userData);
+
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        log('Parsed user object: ' + JSON.stringify(user, null, 2));
+        log('employee_name field: ' + user.employee_name);
+        log('Available keys: ' + Object.keys(user).join(', '));
+      } catch (e) {
+        log('Error parsing user data: ' + e.message);
+      }
+    } else {
+      log('No user data found in localStorage');
+    }
+
+    // Test login API
+    log('Testing login API...');
+    fetch('http://localhost:3001/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: 'ralph_aguas',
+        password: 'user123'
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      log('Login API response: ' + JSON.stringify(data, null, 2));
+      if (data.user) {
+        log('User object from API: ' + JSON.stringify(data.user, null, 2));
+        log('employee_name from API: ' + data.user.employee_name);
+      }
+    })
+    .catch(error => {
+      log('Login API error: ' + error.message);
+    });
+  </script>
+</body>
+</html>
