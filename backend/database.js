@@ -1,174 +1,136 @@
-const initSqlJs = require('sql.js');
-const fs = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
 
-const dbPath = path.join(__dirname, 'database.db');
-let db = null;
-
-// Suppress Node.js warnings about assertion failures
-process.on('uncaughtException', (err) => {
-  if (!err.message.includes('Assertion failed')) {
-    throw err;
-  }
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 // Initialize database
 async function initializeDatabase() {
-  const SQL = await initSqlJs();
-  
-  // Try to load existing database
-  let filebuffer;
+  const client = await pool.connect();
   try {
-    filebuffer = fs.readFileSync(dbPath);
-    db = new SQL.Database(filebuffer);
+    // Create tables
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS employees (
+        id SERIAL PRIMARY KEY,
+        barcode TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        phone TEXT,
+        address TEXT,
+        birthdate DATE,
+        position TEXT,
+        employed_date DATE,
+        department TEXT,
+        emergency_contact_name TEXT,
+        emergency_contact_phone TEXT,
+        vacation_leave INTEGER DEFAULT 0,
+        sick_leave INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'Active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS attendance (
+        id SERIAL PRIMARY KEY,
+        employee_id INTEGER NOT NULL REFERENCES employees(id),
+        date DATE NOT NULL,
+        time_in TIME,
+        time_out TIME,
+        worked_hours REAL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS leave_requests (
+        id SERIAL PRIMARY KEY,
+        employee_id INTEGER NOT NULL REFERENCES employees(id),
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        leave_type TEXT NOT NULL,
+        reason TEXT,
+        status TEXT DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS tap_logs (
+        id SERIAL PRIMARY KEY,
+        barcode TEXT NOT NULL,
+        employee_id INTEGER REFERENCES employees(id),
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        employee_id INTEGER REFERENCES employees(id),
+        role TEXT DEFAULT 'employee',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS announcements (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS schedule_events (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        event_date DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    console.log('✅ Database tables initialized');
   } catch (err) {
-    // Create new database
-    db = new SQL.Database();
-  }
-
-  // Create tables
-  db.run(`
-    CREATE TABLE IF NOT EXISTS employees (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      barcode TEXT UNIQUE NOT NULL,
-      name TEXT NOT NULL,
-      phone TEXT,
-      address TEXT,
-      birthdate DATE,
-      position TEXT,
-      employed_date DATE,
-      department TEXT,
-      emergency_contact_name TEXT,
-      emergency_contact_phone TEXT,
-      vacation_leave INTEGER DEFAULT 0,
-      sick_leave INTEGER DEFAULT 0,
-      status TEXT DEFAULT 'Active',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS attendance (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      employee_id INTEGER NOT NULL,
-      date DATE NOT NULL,
-      time_in TIME,
-      time_out TIME,
-      worked_hours REAL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (employee_id) REFERENCES employees(id)
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS leave_requests (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      employee_id INTEGER NOT NULL,
-      start_date DATE NOT NULL,
-      end_date DATE NOT NULL,
-      leave_type TEXT NOT NULL,
-      reason TEXT,
-      status TEXT DEFAULT 'Pending',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (employee_id) REFERENCES employees(id)
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS tap_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      barcode TEXT NOT NULL,
-      employee_id INTEGER,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (employee_id) REFERENCES employees(id)
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS schedule_events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      description TEXT,
-      event_date DATE NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS announcements (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      employee_id INTEGER,
-      role TEXT DEFAULT 'employee',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (employee_id) REFERENCES employees(id)
-    )
-  `);
-
-  saveDatabase();
-  console.log('✅ Database initialized');
-}
-
-function saveDatabase() {
-  if (db) {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
+    console.error('❌ Error initializing database:', err);
+  } finally {
+    client.release();
   }
 }
 
-function executeQuery(sql, params = []) {
+async function executeQuery(sql, params = []) {
   try {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    const result = [];
-    while (stmt.step()) {
-      result.push(stmt.getAsObject());
-    }
-    stmt.free();
-    return result;
+    const res = await pool.query(sql, params);
+    return res.rows;
   } catch (err) {
+    console.error('Query error:', err);
     throw err;
   }
 }
 
-function executeInsert(sql, params = []) {
+async function executeInsert(sql, params = []) {
   try {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    stmt.step();
-    stmt.free();
-    const result = db.exec('SELECT last_insert_rowid() as id');
-    saveDatabase();
-    return { lastID: result[0].values[0][0] };
+    const res = await pool.query(sql, params);
+    return { lastID: res.rows[0]?.id || null };
   } catch (err) {
+    console.error('Insert error:', err);
     throw err;
   }
 }
 
-function executeUpdate(sql, params = []) {
+async function executeUpdate(sql, params = []) {
   try {
-    const stmt = db.prepare(sql);
-    stmt.bind(params);
-    stmt.step();
-    stmt.free();
-    saveDatabase();
-    return { changes: db.getRowsModified() };
+    const res = await pool.query(sql, params);
+    return res.rowCount;
   } catch (err) {
+    console.error('Update error:', err);
     throw err;
   }
 }
@@ -179,13 +141,13 @@ async function createUserAccountsForEmployees() {
 
     // Create admin account first
     console.log('👤 Checking for admin account...');
-    const existingAdmin = executeQuery('SELECT id FROM users WHERE username = ?', ['admin']);
+    const existingAdmin = await executeQuery('SELECT id FROM users WHERE username = $1', ['admin']);
     console.log('Admin check result:', existingAdmin.length, 'existing admin accounts');
 
     if (existingAdmin.length === 0) {
       console.log('📝 Creating admin account...');
-      const adminResult = executeInsert(
-        'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+      const adminResult = await executeInsert(
+        'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id',
         ['admin', 'admin123', 'admin']
       );
       console.log('✅ Created admin account: admin (ID:', adminResult.lastID, ')');
@@ -195,7 +157,7 @@ async function createUserAccountsForEmployees() {
 
     // Get all employees
     console.log('👥 Getting employee list...');
-    const employees = executeQuery('SELECT id, name FROM employees');
+    const employees = await executeQuery('SELECT id, name FROM employees');
     console.log('Found', employees.length, 'employees');
 
     for (const employee of employees) {
@@ -205,13 +167,13 @@ async function createUserAccountsForEmployees() {
       console.log(`🔍 Checking user account for ${employee.name} -> ${username}`);
 
       // Check if user already exists
-      const existingUser = executeQuery('SELECT id FROM users WHERE username = ?', [username]);
+      const existingUser = await executeQuery('SELECT id FROM users WHERE username = $1', [username]);
 
       if (existingUser.length === 0) {
         // Create user account with password 'user123'
         console.log(`📝 Creating user account for ${employee.name}...`);
-        const result = executeInsert(
-          'INSERT INTO users (username, password, employee_id, role) VALUES (?, ?, ?, ?)',
+        const result = await executeInsert(
+          'INSERT INTO users (username, password, employee_id, role) VALUES ($1, $2, $3, $4) RETURNING id',
           [username, 'user123', employee.id, 'employee']
         );
         console.log(`✅ Created user account for ${employee.name}: ${username} (ID: ${result.lastID})`);
@@ -233,5 +195,5 @@ module.exports = {
   executeInsert,
   executeUpdate,
   createUserAccountsForEmployees,
-  getDb: () => db
+  getDb: () => pool
 };
