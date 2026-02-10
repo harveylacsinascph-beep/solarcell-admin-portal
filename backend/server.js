@@ -56,7 +56,7 @@ app.get('/api/employees', async (req, res) => {
 
 app.get('/api/employees/:id', async (req, res) => {
   try {
-    const rows = await executeQuery('SELECT * FROM employees WHERE id = ?', [req.params.id]);
+    const rows = await executeQuery('SELECT * FROM employees WHERE id = $1', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Employee not found' });
     res.json(rows[0]);
   } catch (err) {
@@ -89,7 +89,7 @@ app.post('/api/employees', async (req, res) => {
       barcode = 'SCPH' + dateStr + sequenceNum;
 
       // Check if barcode already exists
-      const existing = await executeQuery('SELECT id FROM employees WHERE barcode = ?', [barcode]);
+      const existing = await executeQuery('SELECT id FROM employees WHERE barcode = $1', [barcode]);
       if (existing.length === 0) {
         break; // Unique barcode found
       }
@@ -108,10 +108,10 @@ app.post('/api/employees', async (req, res) => {
 
     const result = await executeInsert(
       `INSERT INTO employees (barcode, name, phone, address, birthdate, position, employed_date, department, emergency_contact_name, emergency_contact_phone)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [barcode, name, phone, address, birthdate, position, employed_date, department, emergency_contact_name, emergency_contact_phone]
     );
-    const newEmployee = await executeQuery('SELECT * FROM employees WHERE id = ?', [result.lastID]);
+    const newEmployee = await executeQuery('SELECT * FROM employees WHERE id = $1', [result.lastID]);
     console.log('✅ Employee added successfully:', newEmployee[0].id);
 
     // Automatically create user account for the new employee
@@ -128,10 +128,10 @@ app.put('/api/employees/:id', async (req, res) => {
   try {
     const { barcode, name, phone, address, birthdate, position, employed_date, department, emergency_contact_name, emergency_contact_phone, vacation_leave, sick_leave, status } = req.body;
     await executeUpdate(
-      `UPDATE employees SET barcode = ?, name = ?, phone = ?, address = ?, birthdate = ?, position = ?, employed_date = ?, department = ?, emergency_contact_name = ?, emergency_contact_phone = ?, vacation_leave = ?, sick_leave = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      `UPDATE employees SET barcode = $1, name = $2, phone = $3, address = $4, birthdate = $5, position = $6, employed_date = $7, department = $8, emergency_contact_name = $9, emergency_contact_phone = $10, vacation_leave = $11, sick_leave = $12, status = $13, updated_at = CURRENT_TIMESTAMP WHERE id = $14`,
       [barcode, name, phone, address, birthdate, position, employed_date, department, emergency_contact_name, emergency_contact_phone, vacation_leave, sick_leave, status, req.params.id]
     );
-    const updated = await executeQuery('SELECT * FROM employees WHERE id = ?', [req.params.id]);
+    const updated = await executeQuery('SELECT * FROM employees WHERE id = $1', [req.params.id]);
     res.json(updated[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -140,7 +140,7 @@ app.put('/api/employees/:id', async (req, res) => {
 
 app.delete('/api/employees/:id', async (req, res) => {
   try {
-    await executeUpdate('DELETE FROM employees WHERE id = ?', [req.params.id]);
+    await executeUpdate('DELETE FROM employees WHERE id = $1', [req.params.id]);
     res.json({ message: 'Employee deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -160,7 +160,7 @@ app.get('/api/attendance', async (req, res) => {
 
 app.get('/api/attendance/employee/:employee_id', async (req, res) => {
   try {
-    const rows = await executeQuery(`SELECT a.*, e.name, e.barcode FROM attendance a LEFT JOIN employees e ON a.employee_id = e.id WHERE a.employee_id = ? ORDER BY a.created_at DESC`, [req.params.employee_id]);
+    const rows = await executeQuery(`SELECT a.*, e.name, e.barcode FROM attendance a LEFT JOIN employees e ON a.employee_id = e.id WHERE a.employee_id = $1 ORDER BY a.created_at DESC`, [req.params.employee_id]);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -396,7 +396,7 @@ app.post('/api/login', async (req, res) => {
     console.log('Login attempt:', { username, password });
 
     // Check if user exists and password matches
-    const user = await executeQuery('SELECT u.*, e.name as employee_name FROM users u LEFT JOIN employees e ON u.employee_id = e.id WHERE u.username = ? AND u.password = ?', [username, password]);
+    const user = await executeQuery('SELECT u.*, e.name as employee_name FROM users u LEFT JOIN employees e ON u.employee_id = e.id WHERE u.username = $1 AND u.password = $2', [username, password]);
     console.log('Login query result:', user.length, 'users found');
 
     if (user.length === 0) {

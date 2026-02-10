@@ -118,7 +118,7 @@ async function executeQuery(sql, params = []) {
 async function executeInsert(sql, params = []) {
   try {
     const res = await pool.query(sql, params);
-    return { lastID: res.rows[0]?.id || null };
+    return { lastID: res.rows[0].id };
   } catch (err) {
     console.error('Insert error:', err);
     throw err;
