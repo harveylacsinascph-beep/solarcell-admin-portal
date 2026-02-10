@@ -5,7 +5,7 @@ const path = require('path');
 const { initializeDatabase, executeQuery, executeInsert, executeUpdate, createUserAccountsForEmployees } = require('./database');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Suppress Windows assertion errors from sql.js
 process.on('uncaughtException', (err) => {
@@ -45,18 +45,18 @@ app.get('/', (req, res) => {
 
 // ==================== EMPLOYEES ====================
 
-app.get('/api/employees', (req, res) => {
+app.get('/api/employees', async (req, res) => {
   try {
-    const rows = executeQuery('SELECT * FROM employees ORDER BY name');
+    const rows = await executeQuery('SELECT * FROM employees ORDER BY name');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/employees/:id', (req, res) => {
+app.get('/api/employees/:id', async (req, res) => {
   try {
-    const rows = executeQuery('SELECT * FROM employees WHERE id = ?', [req.params.id]);
+    const rows = await executeQuery('SELECT * FROM employees WHERE id = $1', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Employee not found' });
     res.json(rows[0]);
   } catch (err) {
@@ -75,7 +75,7 @@ app.post('/api/employees', async (req, res) => {
 
     while (attempts < maxAttempts) {
       // Get the current count of employees to use as a base
-      const countResult = executeQuery('SELECT COUNT(*) as count FROM employees');
+      const countResult = await executeQuery('SELECT COUNT(*) as count FROM employees');
       const employeeCount = countResult[0].count;
 
       // Create barcode with format: SCPH + YYYYMMDD + sequential number
@@ -89,7 +89,7 @@ app.post('/api/employees', async (req, res) => {
       barcode = 'SCPH' + dateStr + sequenceNum;
 
       // Check if barcode already exists
-      const existing = executeQuery('SELECT id FROM employees WHERE barcode = ?', [barcode]);
+      const existing = await executeQuery('SELECT id FROM employees WHERE barcode = $1', [barcode]);
       if (existing.length === 0) {
         break; // Unique barcode found
       }
@@ -106,12 +106,12 @@ app.post('/api/employees', async (req, res) => {
 
     console.log('Adding employee:', { barcode, name, department });
 
-    const result = executeInsert(
+    const result = await executeInsert(
       `INSERT INTO employees (barcode, name, phone, address, birthdate, position, employed_date, department, emergency_contact_name, emergency_contact_phone)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [barcode, name, phone, address, birthdate, position, employed_date, department, emergency_contact_name, emergency_contact_phone]
     );
-    const newEmployee = executeQuery('SELECT * FROM employees WHERE id = ?', [result.lastID]);
+    const newEmployee = await executeQuery('SELECT * FROM employees WHERE id = $1', [result.lastID]);
     console.log('✅ Employee added successfully:', newEmployee[0].id);
 
     // Automatically create user account for the new employee
@@ -124,23 +124,23 @@ app.post('/api/employees', async (req, res) => {
   }
 });
 
-app.put('/api/employees/:id', (req, res) => {
+app.put('/api/employees/:id', async (req, res) => {
   try {
     const { barcode, name, phone, address, birthdate, position, employed_date, department, emergency_contact_name, emergency_contact_phone, vacation_leave, sick_leave, status } = req.body;
-    executeUpdate(
-      `UPDATE employees SET barcode = ?, name = ?, phone = ?, address = ?, birthdate = ?, position = ?, employed_date = ?, department = ?, emergency_contact_name = ?, emergency_contact_phone = ?, vacation_leave = ?, sick_leave = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+    await executeUpdate(
+      `UPDATE employees SET barcode = $1, name = $2, phone = $3, address = $4, birthdate = $5, position = $6, employed_date = $7, department = $8, emergency_contact_name = $9, emergency_contact_phone = $10, vacation_leave = $11, sick_leave = $12, status = $13, updated_at = CURRENT_TIMESTAMP WHERE id = $14`,
       [barcode, name, phone, address, birthdate, position, employed_date, department, emergency_contact_name, emergency_contact_phone, vacation_leave, sick_leave, status, req.params.id]
     );
-    const updated = executeQuery('SELECT * FROM employees WHERE id = ?', [req.params.id]);
+    const updated = await executeQuery('SELECT * FROM employees WHERE id = $1', [req.params.id]);
     res.json(updated[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.delete('/api/employees/:id', (req, res) => {
+app.delete('/api/employees/:id', async (req, res) => {
   try {
-    executeUpdate('DELETE FROM employees WHERE id = ?', [req.params.id]);
+    await executeUpdate('DELETE FROM employees WHERE id = $1', [req.params.id]);
     res.json({ message: 'Employee deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -149,46 +149,46 @@ app.delete('/api/employees/:id', (req, res) => {
 
 // ==================== ATTENDANCE ====================
 
-app.get('/api/attendance', (req, res) => {
+app.get('/api/attendance', async (req, res) => {
   try {
-    const rows = executeQuery(`SELECT a.*, e.name, e.barcode FROM attendance a LEFT JOIN employees e ON a.employee_id = e.id ORDER BY a.created_at DESC`);
+    const rows = await executeQuery(`SELECT a.*, e.name, e.barcode FROM attendance a LEFT JOIN employees e ON a.employee_id = e.id ORDER BY a.created_at DESC`);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/attendance/employee/:employee_id', (req, res) => {
+app.get('/api/attendance/employee/:employee_id', async (req, res) => {
   try {
-    const rows = executeQuery(`SELECT a.*, e.name, e.barcode FROM attendance a LEFT JOIN employees e ON a.employee_id = e.id WHERE a.employee_id = ? ORDER BY a.created_at DESC`, [req.params.employee_id]);
+    const rows = await executeQuery(`SELECT a.*, e.name, e.barcode FROM attendance a LEFT JOIN employees e ON a.employee_id = e.id WHERE a.employee_id = $1 ORDER BY a.created_at DESC`, [req.params.employee_id]);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/attendance', (req, res) => {
+app.post('/api/attendance', async (req, res) => {
   try {
     const { employee_id, date, time_in } = req.body;
-    const result = executeInsert('INSERT INTO attendance (employee_id, date, time_in) VALUES (?, ?, ?)', [employee_id, date, time_in]);
+    const result = await executeInsert('INSERT INTO attendance (employee_id, date, time_in) VALUES ($1, $2, $3)', [employee_id, date, time_in]);
     res.status(201).json({ id: result.lastID, message: 'Time in recorded' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.put('/api/attendance/:id', (req, res) => {
+app.put('/api/attendance/:id', async (req, res) => {
   try {
     const { time_out, worked_hours } = req.body;
-    executeUpdate('UPDATE attendance SET time_out = ?, worked_hours = ? WHERE id = ?', [time_out, worked_hours, req.params.id]);
-    const updated = executeQuery('SELECT * FROM attendance WHERE id = ?', [req.params.id]);
+    await executeUpdate('UPDATE attendance SET time_out = $1, worked_hours = $2 WHERE id = $3', [time_out, worked_hours, req.params.id]);
+    const updated = await executeQuery('SELECT * FROM attendance WHERE id = $1', [req.params.id]);
     res.json(updated[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.delete('/api/attendance/:id', (req, res) => {
+app.delete('/api/attendance/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) {
@@ -198,7 +198,7 @@ app.delete('/api/attendance/:id', (req, res) => {
     console.log('DELETE request for attendance ID:', id);
 
     // First check if the record exists
-    const existing = executeQuery('SELECT id FROM attendance WHERE id = ?', [id]);
+    const existing = await executeQuery('SELECT id FROM attendance WHERE id = ?', [id]);
     console.log('Existing records found:', existing.length);
 
     if (existing.length === 0) {
@@ -206,7 +206,7 @@ app.delete('/api/attendance/:id', (req, res) => {
       return res.status(404).json({ error: 'Attendance record not found' });
     }
 
-    const result = executeUpdate('DELETE FROM attendance WHERE id = ?', [id]);
+    const result = await executeUpdate('DELETE FROM attendance WHERE id = ?', [id]);
     console.log('Delete result:', result);
     res.json({ message: 'Attendance record deleted successfully' });
   } catch (err) {
@@ -217,20 +217,20 @@ app.delete('/api/attendance/:id', (req, res) => {
 
 // ==================== LEAVE REQUESTS ====================
 
-app.get('/api/leave-requests', (req, res) => {
+app.get('/api/leave-requests', async (req, res) => {
   try {
-    const rows = executeQuery(`SELECT l.*, e.name, e.barcode FROM leave_requests l JOIN employees e ON l.employee_id = e.id ORDER BY l.created_at DESC`);
+    const rows = await executeQuery(`SELECT l.*, e.name, e.barcode FROM leave_requests l JOIN employees e ON l.employee_id = e.id ORDER BY l.created_at DESC`);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/leave-requests', (req, res) => {
+app.post('/api/leave-requests', async (req, res) => {
   try {
     const { employee_id, start_date, end_date, leave_type, reason } = req.body;
-    const result = executeInsert(
-      `INSERT INTO leave_requests (employee_id, start_date, end_date, leave_type, reason) VALUES (?, ?, ?, ?, ?)`,
+    const result = await executeInsert(
+      `INSERT INTO leave_requests (employee_id, start_date, end_date, leave_type, reason) VALUES ($1, $2, $3, $4, $5)`,
       [employee_id, start_date, end_date, leave_type, reason]
     );
     res.status(201).json({ id: result.lastID, message: 'Leave request submitted' });
@@ -239,11 +239,11 @@ app.post('/api/leave-requests', (req, res) => {
   }
 });
 
-app.put('/api/leave-requests/:id', (req, res) => {
+app.put('/api/leave-requests/:id', async (req, res) => {
   try {
     const { status } = req.body;
-    executeUpdate('UPDATE leave_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, req.params.id]);
-    const updated = executeQuery('SELECT * FROM leave_requests WHERE id = ?', [req.params.id]);
+    await executeUpdate('UPDATE leave_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, req.params.id]);
+    const updated = await executeQuery('SELECT * FROM leave_requests WHERE id = ?', [req.params.id]);
     res.json(updated[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -360,9 +360,9 @@ app.delete('/api/schedule-events/:id', (req, res) => {
 
 // ==================== ANNOUNCEMENTS ====================
 
-app.get('/api/announcements', (req, res) => {
+app.get('/api/announcements', async (req, res) => {
   try {
-    const rows = executeQuery('SELECT * FROM announcements ORDER BY created_at DESC');
+    const rows = await executeQuery('SELECT * FROM announcements ORDER BY created_at DESC');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -390,13 +390,13 @@ app.delete('/api/announcements/:id', (req, res) => {
 
 // ==================== AUTHENTICATION ====================
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     console.log('Login attempt:', { username, password });
 
     // Check if user exists and password matches
-    const user = executeQuery('SELECT u.*, e.name as employee_name FROM users u LEFT JOIN employees e ON u.employee_id = e.id WHERE u.username = ? AND u.password = ?', [username, password]);
+    const user = await executeQuery('SELECT u.*, e.name as employee_name FROM users u LEFT JOIN employees e ON u.employee_id = e.id WHERE u.username = $1 AND u.password = $2', [username, password]);
     console.log('Login query result:', user.length, 'users found');
 
     if (user.length === 0) {
