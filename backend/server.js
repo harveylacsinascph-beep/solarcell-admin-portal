@@ -170,7 +170,7 @@ app.get('/api/attendance/employee/:employee_id', async (req, res) => {
 app.post('/api/attendance', async (req, res) => {
   try {
     const { employee_id, date, time_in } = req.body;
-    const result = await executeInsert('INSERT INTO attendance (employee_id, date, time_in) VALUES (?, ?, ?)', [employee_id, date, time_in]);
+    const result = await executeInsert('INSERT INTO attendance (employee_id, date, time_in) VALUES ($1, $2, $3)', [employee_id, date, time_in]);
     res.status(201).json({ id: result.lastID, message: 'Time in recorded' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -180,8 +180,8 @@ app.post('/api/attendance', async (req, res) => {
 app.put('/api/attendance/:id', async (req, res) => {
   try {
     const { time_out, worked_hours } = req.body;
-    await executeUpdate('UPDATE attendance SET time_out = ?, worked_hours = ? WHERE id = ?', [time_out, worked_hours, req.params.id]);
-    const updated = await executeQuery('SELECT * FROM attendance WHERE id = ?', [req.params.id]);
+    await executeUpdate('UPDATE attendance SET time_out = $1, worked_hours = $2 WHERE id = $3', [time_out, worked_hours, req.params.id]);
+    const updated = await executeQuery('SELECT * FROM attendance WHERE id = $1', [req.params.id]);
     res.json(updated[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -230,7 +230,7 @@ app.post('/api/leave-requests', async (req, res) => {
   try {
     const { employee_id, start_date, end_date, leave_type, reason } = req.body;
     const result = await executeInsert(
-      `INSERT INTO leave_requests (employee_id, start_date, end_date, leave_type, reason) VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO leave_requests (employee_id, start_date, end_date, leave_type, reason) VALUES ($1, $2, $3, $4, $5)`,
       [employee_id, start_date, end_date, leave_type, reason]
     );
     res.status(201).json({ id: result.lastID, message: 'Leave request submitted' });
@@ -360,9 +360,9 @@ app.delete('/api/schedule-events/:id', (req, res) => {
 
 // ==================== ANNOUNCEMENTS ====================
 
-app.get('/api/announcements', (req, res) => {
+app.get('/api/announcements', async (req, res) => {
   try {
-    const rows = executeQuery('SELECT * FROM announcements ORDER BY created_at DESC');
+    const rows = await executeQuery('SELECT * FROM announcements ORDER BY created_at DESC');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
