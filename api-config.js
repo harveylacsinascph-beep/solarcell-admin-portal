@@ -1,7 +1,7 @@
 // Frontend API Configuration
 // Save this as config.js in the root directory of your HTML files
 
-const API_BASE_URL = 'https://solarcell-admin-portal.onrender.com/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // Helper function to make API calls
 async function apiCall(endpoint, method = 'GET', data = null) {

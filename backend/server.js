@@ -5,7 +5,7 @@ const path = require('path');
 const { initializeDatabase, executeQuery, executeInsert, executeUpdate, createUserAccountsForEmployees } = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Suppress Windows assertion errors from sql.js
 process.on('uncaughtException', (err) => {
@@ -32,13 +32,18 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'auth-login.html'));
 });
 
+// Test route for connectivity
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Server is running and accessible', timestamp: new Date().toISOString() });
+});
+
 // Initialize database on startup
 (async () => {
   await initializeDatabase();
   await createUserAccountsForEmployees();
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running at http://localhost:${PORT} and http://0.0.0.0:${PORT}`);
     console.log(`📊 Database: database.db`);
   });
 })();
